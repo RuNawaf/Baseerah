@@ -1,6 +1,7 @@
 /* Baseerah: a warm, quiet page in the manner the client asked for (large tight headline, warm off-white ground,
    pill buttons, a dark command field, the product shown on floating cards). The logo's navy carries the data
-   (severity, page tiles); its cyan strikes one word and nothing else; red only marks pages that could not be scanned.
+   (severity, page tiles); the logo's cobalt is the one accent (the strike, links, progress); red only marks pages
+   that could not be scanned.
    The app screens (progress, report) keep their rules: one tone step and 1px edges for panels. */
 :root {
   --ground: #f5f4f1;
@@ -16,8 +17,8 @@
   --navy: #012866; /* logo navy: data, tiles */
   --muted: #55524c;
   --faint: #6b6760;
-  --teal: #006d78; /* logo cyan darkened to AA for text */
-  --cyan: #01c6d8; /* logo cyan, decorative only */
+  --teal: #2f5bff; /* links and focus: the logo's cobalt, 4.7:1 on the ground */
+  --cyan: #2f5bff; /* the logo's cobalt accent */
   --dark: #141414;
   --dark-raised: #262626;
 
@@ -34,7 +35,7 @@
   --warn-edge: #fde68a;
   --warn-ink: #92400e;
 
-  --font: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', 'Readex Pro', system-ui, sans-serif;
   --mono: 'Atkinson Hyperlegible Mono', ui-monospace, monospace; /* taste-skill-ignore: URLs and paths are identifiers */
 
   --fs-small: 0.8125rem;
@@ -110,7 +111,7 @@ pre,
 
 .num {
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 :focus-visible {
@@ -147,6 +148,53 @@ pre,
 
 .skip-link:focus {
   top: 0;
+}
+
+/* ---------- Arabic ---------- */
+
+/* Readex Pro was drawn for readability in Arabic. Letter-spacing would break the joins between Arabic letters,
+   and Arabic needs taller lines than the tight Latin display setting. */
+:root[lang='ar'] body {
+  font-family: 'Readex Pro', var(--font);
+}
+
+:root[lang='ar'] :is(h1, h2, h3, h4, .tagline, .answer-figure, .fact-figure, .pc-figure, .pc-host) {
+  letter-spacing: 0;
+}
+
+:root[lang='ar'] .hero h1 {
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+:root[lang='ar'] .statement h2 {
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+:root[lang='ar'] .tagline {
+  line-height: 1.4;
+}
+
+:root[lang='ar'] .struck::after {
+  top: 58%;
+}
+
+[dir='rtl'] .arrow-forward {
+  scale: -1 1;
+}
+
+[dir='rtl'] .page-rows summary .cell-page::after {
+  transform: rotate(135deg);
+}
+
+/* URLs, paths and code read left to right in both languages */
+.url,
+.page-path,
+code,
+pre {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 /* ---------- shell ---------- */
@@ -226,6 +274,22 @@ pre,
 
 .sheet-footer p {
   max-width: 80ch;
+}
+
+.lang-switch {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 700 1.0625rem/1 'Readex Pro', var(--font);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.lang-switch:hover {
+  background: var(--raised);
 }
 
 /* ---------- pills ---------- */
@@ -475,15 +539,24 @@ pre,
 .eye-chart {
   position: absolute;
   top: -48px;
-  right: 4%;
+  inset-inline-end: 4%;
   width: 72%;
   aspect-ratio: 600 / 760;
   background: no-repeat center top / contain;
   opacity: 0.1;
 }
 
+.preview-stack {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .preview-card {
   position: absolute;
+  display: block;
   padding: 18px 20px;
   background: var(--sheet);
   border: 1px solid var(--border);
@@ -491,24 +564,103 @@ pre,
   box-shadow: 0 30px 60px -30px rgb(20 20 20 / 0.28); /* taste-skill-ignore: these cards float over the page by design */
   font-size: var(--fs-meta);
   color: var(--text);
+  text-align: start;
+  /* the swap: position and tilt glide; the layer order flips halfway, when the cards are apart */
+  transition:
+    top 720ms cubic-bezier(0.65, 0, 0.25, 1),
+    inset-inline-start 720ms cubic-bezier(0.65, 0, 0.25, 1),
+    width 720ms cubic-bezier(0.65, 0, 0.25, 1),
+    rotate 720ms cubic-bezier(0.65, 0, 0.25, 1),
+    translate 200ms ease-out,
+    z-index 0s linear 300ms;
 }
 
-.preview-back {
+.preview-card.is-back {
   top: 10px;
-  right: 0;
+  inset-inline-start: 22%;
   width: 78%;
+  rotate: 3deg;
+  z-index: 1;
+}
+
+.preview-card.is-front {
+  top: 120px;
+  inset-inline-start: 0;
+  width: 86%;
+  rotate: -2deg;
+  z-index: 2;
+}
+
+.card-scan {
   min-height: 210px;
-  transform: rotate(3deg);
   background: var(--dark);
   border-color: var(--dark);
   color: #fff;
 }
 
-.preview-front {
-  top: 120px;
-  left: 0;
-  width: 86%;
-  transform: rotate(-2deg);
+.card-scan .pc-dim,
+.card-scan .pc-state {
+  color: #bdbdbd;
+}
+
+.card-scan .pc-rows li {
+  border-top-color: #2c2c2c;
+}
+
+.card-scan .pc-rows li span:last-child {
+  color: #bdbdbd;
+  font-weight: 400;
+}
+
+/* after the first swap, each card also lifts out of the stack on its way */
+.preview-stack.swapped .is-front {
+  animation: card-forward 720ms cubic-bezier(0.65, 0, 0.25, 1);
+}
+
+.preview-stack.swapped .is-back {
+  animation: card-backward 720ms cubic-bezier(0.65, 0, 0.25, 1);
+}
+
+@keyframes card-forward {
+  40% {
+    translate: 12% -14%;
+    scale: 1.03;
+  }
+}
+
+@keyframes card-backward {
+  40% {
+    translate: -14% 10%;
+    scale: 0.95;
+  }
+}
+
+.preview-stack:hover .is-back {
+  translate: 0 -6px;
+}
+
+.preview-switch {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--sheet);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.preview-switch:hover {
+  background: var(--raised);
 }
 
 .pc-bar {
@@ -529,9 +681,6 @@ pre,
   font-size: var(--fs-small);
 }
 
-.preview-back .pc-dim {
-  color: #bdbdbd;
-}
 
 .pc-pill {
   padding: 2px 10px;
@@ -566,8 +715,8 @@ pre,
   height: 26px;
 }
 
-.preview-back .tile-queued .tile-sheet,
-.preview-back .tile-queued .tile-fold {
+.card-scan .tile-queued .tile-sheet,
+.card-scan .tile-queued .tile-fold {
   stroke: #8a8a8a;
 }
 
@@ -871,8 +1020,8 @@ pre,
 .hero-copy > :nth-child(5) { animation-delay: 280ms; }
 .hero-copy > :nth-child(6) { animation-delay: 350ms; }
 .eye-chart { animation-duration: 1200ms; }
-.preview-back { animation-delay: 200ms; }
-.preview-front { animation-delay: 320ms; }
+.card-scan { animation-delay: 200ms; }
+.card-report { animation-delay: 320ms; }
 
 .js-motion .reveal > *,
 .js-motion .reveal .stage,
@@ -1066,7 +1215,7 @@ pre,
   margin-top: var(--gap);
   padding: 16px var(--card-pad);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--positive);
+  border-inline-start: 4px solid var(--positive);
   border-radius: var(--radius-card);
 }
 
@@ -1081,7 +1230,7 @@ pre,
 }
 
 .notice-failed {
-  border-left-color: var(--fail);
+  border-inline-start-color: var(--fail);
 }
 
 .notice-failed h2 {
@@ -1155,7 +1304,7 @@ progress::-moz-progress-bar {
 }
 
 .strip > div + div {
-  border-left: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
 }
 
 .strip dt {
@@ -1444,7 +1593,7 @@ progress::-moz-progress-bar {
 .sev-table td {
   padding: 5px 0;
   font-weight: 400;
-  text-align: left;
+  text-align: start;
 }
 
 .sev-table tr + tr th,
@@ -1453,7 +1602,7 @@ progress::-moz-progress-bar {
 }
 
 .sev-table td.num {
-  text-align: right;
+  text-align: end;
   font-weight: 700;
   color: var(--navy);
 }
@@ -1481,7 +1630,7 @@ progress::-moz-progress-bar {
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   border-radius: 2px;
   vertical-align: -1px;
 }
@@ -1610,7 +1759,7 @@ progress::-moz-progress-bar {
   order: -1;
   width: 7px;
   height: 7px;
-  margin-right: 2px;
+  margin-inline-end: 2px;
   border-right: 2px solid var(--navy);
   border-bottom: 2px solid var(--navy);
   transform: rotate(-45deg);
@@ -1683,7 +1832,8 @@ progress::-moz-progress-bar {
 }
 
 .page-body {
-  padding: 4px 8px 20px 50px;
+  padding-block: 4px 20px;
+  padding-inline: 50px 8px;
 }
 
 .page-link {
@@ -1873,11 +2023,12 @@ progress::-moz-progress-bar {
     font-size: var(--fs-small);
   }
 
-  .preview-back {
+  .preview-card.is-back {
     width: 88%;
+    inset-inline-start: 12%;
   }
 
-  .preview-front {
+  .preview-card.is-front {
     top: 96px;
     width: 96%;
   }
@@ -1935,7 +2086,7 @@ progress::-moz-progress-bar {
   }
 
   .strip > div + div {
-    border-left: 0;
+    border-inline-start: 0;
     border-top: 1px solid var(--border);
   }
 
@@ -1954,7 +2105,7 @@ progress::-moz-progress-bar {
   }
 
   .page-body {
-    padding-left: 8px;
+    padding-inline-start: 8px;
   }
 
   .sev-inline {

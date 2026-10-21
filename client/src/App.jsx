@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getHealth } from './api.js';
 import { useCompletionAlert } from './completionAlert.js';
 import { CompletionNotice } from './components/CompletionNotice.jsx';
@@ -9,18 +9,36 @@ import { Hero } from './components/Hero.jsx';
 import { ScanAbout } from './components/ScanAbout.jsx';
 import { Statement } from './components/Statement.jsx';
 import { ScanProgress } from './components/ScanProgress.jsx';
+import { I18nContext, makeI18n } from './i18n.js';
 import { useScan } from './useScan.js';
 import { validateUrl } from './validateUrl.js';
 
 const REPORT_HASH = /^#\/report\/([0-9a-f-]{36})$/i;
+
+const LANG_KEY = 'baseerah-lang';
+
+// The chosen language is a per-browser convenience; storage may be unavailable (private mode), so it is optional.
+function initialLanguage() {
+  try {
+    const saved = window.localStorage.getItem(LANG_KEY);
+    if (saved === 'ar' || saved === 'en') return saved;
+  } catch {
+    // ignore
+  }
+  return 'en';
+}
 
 function reportIdFromHash() {
   return window.location.hash.match(REPORT_HASH)?.[1] ?? null;
 }
 
 export default function App({ pollIntervalMs = 1000 }) {
+  const [lang, setLang] = useState(initialLanguage);
+  const i18n = useMemo(() => makeI18n(lang), [lang]);
+  const { t } = i18n;
   const { phase, inputError, scan, failure, announcement, submit, resume, reset, clearInputError } = useScan({
     pollIntervalMs,
+    i18n,
   });
   const [url, setUrl] = useState('');
   const [view, setView] = useState('scan');
@@ -38,7 +56,21 @@ export default function App({ pollIntervalMs = 1000 }) {
     if (scanIdRef.current) window.location.hash = `#/report/${scanIdRef.current}`;
     setView('report');
   }, []);
-  const completionAlert = useCompletionAlert({ phase, scan, failure, onOpenReport: openReport });
+  const completionAlert = useCompletionAlert({ phase, scan, failure, onOpenReport: openReport, i18n });
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = i18n.dir;
+    try {
+      window.localStorage.setItem(LANG_KEY, lang);
+    } catch {
+      // ignore
+    }
+  }, [lang, i18n.dir]);
+
+  function toggleLanguage() {
+    setLang((current) => (current === 'ar' ? 'en' : 'ar'));
+  }
 
   useEffect(() => {
     getHealth()
@@ -138,11 +170,12 @@ export default function App({ pollIntervalMs = 1000 }) {
   }
 
   return (
+    <I18nContext.Provider value={i18n}>
     <div className="frame">
       <a className="skip-link" href="#main">
-        Skip to content
+        {t('skip')}
       </a>
-      <Masthead onHome={startNewScan} onScanClick={goToScanForm} />
+      <Masthead onHome={startNewScan} onScanClick={goToScanForm} onToggleLanguage={toggleLanguage} />
       <main id="main" className="sheet" tabIndex={-1}>
         {/* Polite status messages for screen readers: scan started, finished, failed. */}
         <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
@@ -167,7 +200,7 @@ export default function App({ pollIntervalMs = 1000 }) {
             />
 
             {(phase === 'done' || phase === 'failed' || (scan && phase === 'scanning')) && (
-              <section className="run" aria-label="Current scan" data-ui>
+              <section className="run" aria-label={t('currentScan')} data-ui>
                 {phase === 'done' && scan?.report && <CompletionNotice ref={noticeRef} scan={scan} onViewReport={openReport} />}
                 {phase === 'failed' && <FailureNotice ref={noticeRef} error={failure} onRetry={() => scanUrl(url)} />}
                 {scan && phase !== 'failed' && (
@@ -183,12 +216,13 @@ export default function App({ pollIntervalMs = 1000 }) {
 
         <footer className="sheet-footer">
           <p>
-            Baseerah is a SWE 444 project by Inclusive Minds, King Saud University. Checks are powered by{' '}
-            <a href="https://github.com/dequelabs/axe-core">axe-core</a>. Automated tools find some barriers, not all of
-            them.
+            {t('footer').split('{axe}')[0]}
+            <a href="https://github.com/dequelabs/axe-core">axe-core</a>
+            {t('footer').split('{axe}')[1]}
           </p>
         </footer>
       </main>
     </div>
+    </I18nContext.Provider>
   );
 }

@@ -1,4 +1,7 @@
+import { useI18n } from '../i18n.js';
+
 export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputRef }) {
+  const { t, error: errorText } = useI18n();
   const describedBy = ['url-hint', error ? 'url-error' : null].filter(Boolean).join(' ');
 
   return (
@@ -11,7 +14,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
       }}
     >
       <label htmlFor="url" className="field-label">
-        Website URL
+        {t('urlLabel')}
       </label>
       <div className={`command${error ? ' has-error' : ''}`}>
         <input
@@ -19,6 +22,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
           id="url"
           name="url"
           type="text"
+          dir="ltr"
           inputMode="url"
           autoComplete="url"
           autoCapitalize="none"
@@ -31,11 +35,11 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
           readOnly={busy}
         />
         <button type="submit" className="command-button" disabled={busy}>
-          {phase === 'starting' ? 'Checking address…' : phase === 'scanning' ? 'Scanning…' : 'Scan website'}
+          {phase === 'starting' ? t('checkingButton') : phase === 'scanning' ? t('scanningButton') : t('scanButton')}
         </button>
       </div>
       <p id="url-hint" className="field-hint">
-        The start page of a public website. Only public pages are scanned.
+        {t('urlHint')}
       </p>
       {error && (
         <p id="url-error" className="field-error" role="alert">
@@ -43,7 +47,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
             <path d="M8 1.5 15 14H1z" />
             <path d="M8 6v3.6M8 11.4v.1" className="stroke" />
           </svg>
-          {error.message}
+          {errorText(error)}
         </p>
       )}
     </form>

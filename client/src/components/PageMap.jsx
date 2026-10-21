@@ -1,24 +1,24 @@
-import { displayPath, plural } from '../format.js';
-import { IMPACT_LABEL } from '../reportData.js';
+import { displayPath } from '../format.js';
+import { useI18n } from '../i18n.js';
 
 // One page of the website is drawn as a sheet of paper with a folded corner. Its fill says how it went:
 // navy steps for the worst issue on the page, red for a page that could not be scanned.
-const KINDS = {
-  queued: { legend: 'Waiting' },
-  scanning: { legend: 'Checking now' },
-  critical: { legend: 'Worst issue critical' },
-  serious: { legend: 'Worst issue serious' },
-  moderate: { legend: 'Worst issue moderate' },
-  minor: { legend: 'Worst issue minor' },
-  clean: { legend: 'No issues found' },
-  failed: { legend: 'Could not be scanned' },
-  skipped: { legend: 'Skipped' },
+const KIND_LEGEND = {
+  queued: 'tileWaiting',
+  scanning: 'tileChecking',
+  critical: 'tileCritical',
+  serious: 'tileSerious',
+  moderate: 'tileModerate',
+  minor: 'tileMinor',
+  clean: 'tileClean',
+  failed: 'tileFailed',
+  skipped: 'tileSkipped',
 };
-const KIND_ORDER = Object.keys(KINDS);
+const KIND_ORDER = Object.keys(KIND_LEGEND);
 
 export function tileKind(page) {
   if (page.status === 'succeeded') return page.worstImpact ?? (page.issueCount > 0 ? 'minor' : 'clean');
-  return KINDS[page.status] ? page.status : 'queued';
+  return KIND_LEGEND[page.status] ? page.status : 'queued';
 }
 
 function tileText(page, kind) {
@@ -28,22 +28,26 @@ function tileText(page, kind) {
   return '';
 }
 
-export function tileLabel(page) {
+export function tileLabel(page, { t, count, impact }) {
   const path = displayPath(page.url);
   switch (page.status) {
     case 'succeeded':
       // The visible number is part of the name (WCAG 2.5.3), so voice users can say what they see.
       return page.issueCount === 0
-        ? `${path}: checked, 0 issues`
-        : `${path}: checked, ${plural(page.issueCount, 'issue')}, worst ${IMPACT_LABEL[page.worstImpact]?.toLowerCase() ?? 'minor'}`;
+        ? t('labelChecked0', { path })
+        : t('labelChecked', {
+            path,
+            issues: count(page.issueCount, 'issue'),
+            impact: impact(page.worstImpact ?? 'minor').toLowerCase(),
+          });
     case 'failed':
-      return `${path}: could not be scanned`;
+      return t('labelFailed', { path });
     case 'skipped':
-      return `${path}: skipped`;
+      return t('labelSkipped', { path });
     case 'scanning':
-      return `${path}: checking now`;
+      return t('labelScanning', { path });
     default:
-      return `${path}: waiting`;
+      return t('labelWaiting', { path });
   }
 }
 
@@ -65,12 +69,13 @@ export function PageTile({ kind, text = '', small = false }) {
 /**
  * The site's pages as tiles in crawl order. With `onSelect`, each tile is a button that jumps to the page's row.
  */
-export function PageMap({ pages, label = 'Pages found on the website', onSelect }) {
+export function PageMap({ pages, label, onSelect }) {
+  const i18n = useI18n();
   return (
-    <ol className="page-map" aria-label={label}>
+    <ol className="page-map" aria-label={label ?? i18n.t('pagesFound')}>
       {pages.map((page) => {
         const kind = tileKind(page);
-        const description = tileLabel(page);
+        const description = tileLabel(page, i18n);
         return (
           <li key={page.url} title={description}>
             {onSelect ? (
@@ -92,14 +97,15 @@ export function PageMap({ pages, label = 'Pages found on the website', onSelect 
 
 /** Lists only the kinds that are on screen (or the given kinds), each with its own tile as the swatch. */
 export function PageMapLegend({ pages = [], kinds: only }) {
+  const { t } = useI18n();
   const present = new Set(only ?? pages.map(tileKind));
   const kinds = KIND_ORDER.filter((kind) => present.has(kind));
   return (
-    <ul className="legend" aria-label="Key">
+    <ul className="legend" aria-label={t('key')}>
       {kinds.map((kind) => (
         <li key={kind}>
           <PageTile kind={kind} small text={kind === 'failed' ? '!' : kind === 'skipped' ? '–' : ''} />
-          {KINDS[kind].legend}
+          {t(KIND_LEGEND[kind])}
         </li>
       ))}
     </ul>

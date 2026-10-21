@@ -1,11 +1,13 @@
 import { useMemo, useRef } from 'react';
-import { displayHost, displayPath, formatDuration, formatTime, plural } from '../format.js';
-import { IMPACT_LABEL, IMPACTS, summarizeReport } from '../reportData.js';
+import { displayHost, displayPath, formatDuration, formatTime } from '../format.js';
+import { useI18n } from '../i18n.js';
+import { IMPACTS, summarizeReport } from '../reportData.js';
 import { PageMap, PageMapLegend, PageTile, tileKind } from './PageMap.jsx';
 
 const MAX_RULES = 5;
 
 function Impact({ impact }) {
+  const { impact: impactLabel } = useI18n();
   const level = 4 - IMPACTS.indexOf(impact);
   return (
     <span className="impact">
@@ -14,13 +16,14 @@ function Impact({ impact }) {
           <span key={n} className={n <= level ? `on sev-${impact}` : ''} />
         ))}
       </span>
-      {IMPACT_LABEL[impact] ?? impact}
+      {impactLabel(impact)}
     </span>
   );
 }
 
 /** A 100% bar of the issues by severity, with the legend as a table that carries the figures. */
 function SeverityBreakdown({ byImpact, total }) {
+  const { t, impact: impactLabel } = useI18n();
   return (
     <>
       <div className="sev-bar" aria-hidden="true">
@@ -33,12 +36,12 @@ function SeverityBreakdown({ byImpact, total }) {
         )}
       </div>
       <table className="sev-table">
-        <caption className="visually-hidden">Issues by severity</caption>
+        <caption className="visually-hidden">{t('severityCaption')}</caption>
         <thead className="visually-hidden">
           <tr>
-            <th scope="col">Severity</th>
-            <th scope="col">Issues</th>
-            <th scope="col">Share</th>
+            <th scope="col">{t('severity')}</th>
+            <th scope="col">{t('colIssues')}</th>
+            <th scope="col">{t('share')}</th>
           </tr>
         </thead>
         <tbody>
@@ -46,7 +49,7 @@ function SeverityBreakdown({ byImpact, total }) {
             <tr key={impact} className={byImpact[impact] === 0 ? 'is-zero' : ''}>
               <th scope="row">
                 <span className={`swatch sev-${impact}`} aria-hidden="true" />
-                {IMPACT_LABEL[impact]}
+                {impactLabel(impact)}
               </th>
               <td className="num" data-testid={`sev-${impact}`}>
                 {byImpact[impact]}
@@ -57,7 +60,7 @@ function SeverityBreakdown({ byImpact, total }) {
         </tbody>
         <tfoot>
           <tr>
-            <th scope="row">Total</th>
+            <th scope="row">{t('total')}</th>
             <td className="num">{total}</td>
             <td className="num share">{total ? '100%' : '–'}</td>
           </tr>
@@ -68,17 +71,19 @@ function SeverityBreakdown({ byImpact, total }) {
 }
 
 function Violation({ violation }) {
+  const { t, count } = useI18n();
   return (
     <li className="violation">
       <div className="violation-head">
-        <h4>{violation.help}</h4>
+        <h4 dir="ltr">{violation.help}</h4>
         <Impact impact={violation.impact} />
       </div>
       <p className="violation-meta">
-        {plural(violation.nodeCount, 'element')} affected. Rule <code>{violation.id}</code>
-        {violation.wcag.length > 0 && <>, WCAG tags {violation.wcag.join(', ')}</>}.
+        {t('elementsAffected', { elements: count(violation.nodeCount, 'element'), rule: '' })}
+        <code>{violation.id}</code>
+        {violation.wcag.length > 0 && t('wcagTags', { tags: violation.wcag.join(', ') })}.
       </p>
-      <p>{violation.description}</p>
+      <p dir="ltr">{violation.description}</p>
       <ul className="nodes">
         {violation.nodes.map((node, index) => (
           <li key={`${node.target}-${index}`}>
@@ -91,31 +96,35 @@ function Violation({ violation }) {
       </ul>
       {violation.nodeCount > violation.nodes.length && (
         <p className="violation-more">
-          Showing {violation.nodes.length} of {violation.nodeCount} elements.
+          {t('showing', { shown: violation.nodes.length, total: violation.nodeCount })}
         </p>
       )}
       <a href={violation.helpUrl} target="_blank" rel="noopener noreferrer">
-        How to fix it, on Deque University<span className="visually-hidden"> (opens in a new tab)</span>
+        {t('howToFix')}
+        <span className="visually-hidden"> {t('newTab')}</span>
       </a>
     </li>
   );
 }
 
 function SeverityCells({ counts }) {
+  const { impact: impactLabel } = useI18n();
   return IMPACTS.map((impact) => (
     <span key={impact} className={`cell num${counts && counts[impact] === 0 ? ' is-zero' : ''}`}>
       {counts ? counts[impact] : '–'}
-      <span className="visually-hidden"> {IMPACT_LABEL[impact].toLowerCase()}</span>
+      <span className="visually-hidden"> {impactLabel(impact)}</span>
     </span>
   ));
 }
 
-function severityText(counts) {
-  const parts = IMPACTS.filter((impact) => counts[impact] > 0).map((impact) => `${counts[impact]} ${impact}`);
-  return parts.length ? parts.join(', ') : 'No issues';
+function severityText(counts, { t, impact: impactLabel, lang }) {
+  const parts = IMPACTS.filter((impact) => counts[impact] > 0).map((impact) => `${counts[impact]} ${impactLabel(impact)}`);
+  return parts.length ? parts.join(lang === 'ar' ? '، ' : ', ') : t('noIssues');
 }
 
 export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
+  const i18n = useI18n();
+  const { t, count, impact: impactLabel, lang } = i18n;
   const { report } = scan;
   const summary = useMemo(() => summarizeReport(report), [report]);
   const rowRefs = useRef(new Map());
@@ -126,7 +135,7 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
     const row = rowRefs.current.get(page.url);
     if (!row) return;
     if (row.tagName === 'DETAILS') row.open = true;
-    row.scrollIntoView({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    row.scrollIntoView?.({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     row.querySelector('summary, .row-main')?.focus();
   }
 
@@ -135,24 +144,27 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
       <div className="title-row">
         <div>
           <h1 id="report-title" ref={headingRef} tabIndex={-1}>
-            <span className="visually-hidden">Accessibility report for</span> {host}
+            <span className="visually-hidden">{t('reportFor')}</span> <span dir="ltr">{host}</span>
           </h1>
           <p className="sub">
             <a href={report.url} target="_blank" rel="noopener noreferrer" className="url">
               {report.url}
             </a>
             <span className="stamp">
-              Started {formatTime(report.startedAt)}, finished {formatTime(report.finishedAt)} (
-              {formatDuration(report.startedAt, report.finishedAt)})
+              {t('started', {
+                start: formatTime(report.startedAt, lang),
+                end: formatTime(report.finishedAt, lang),
+                duration: formatDuration(report.startedAt, report.finishedAt, lang),
+              })}
             </span>
           </p>
         </div>
         <div className="actions">
           <button type="button" className="btn btn-secondary" onClick={onNewScan}>
-            Scan another website
+            {t('scanAnother')}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => onScanAgain(report.url)}>
-            Scan again
+            {t('scanAgain')}
           </button>
         </div>
       </div>
@@ -160,51 +172,57 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
       <p className="finding">
         {topRule ? (
           <>
-            <strong>Fix first:</strong> {topRule.help}. {IMPACT_LABEL[topRule.impact]}, {plural(topRule.elements, 'element')} on{' '}
-            {plural(topRule.pages, 'page')}.
+            <strong>{t('fixFirst')}</strong> <bdi>{topRule.help}</bdi>
+            {t('fixFirstText', {
+              impact: impactLabel(topRule.impact),
+              elements: count(topRule.elements, 'element'),
+              pages: count(topRule.pages, 'page'),
+            }).replace('{rule}', '')}
           </>
         ) : (
-          <>axe-core found no issues on the {plural(counts.scanned, 'scanned page')}. Automated checks find some barriers, not all, so test by hand too.</>
+          <>{t('noIssuesFinding', { pages: count(counts.scanned, 'scannedPage') })}</>
         )}
       </p>
 
       {report.limitsReached.map((limit) => (
         <p key={limit.type} className="notice-warning">
-          <strong>Partial scan.</strong> {limit.message}
+          <strong>{t('partial')}</strong> {i18n.limit(limit, scan.limits)}
         </p>
       ))}
 
       <div className="grid overview">
         <section className="panel" aria-labelledby="issues-title">
           <header className="panel-head">
-            <h2 id="issues-title">Issues</h2>
-            <p className="meta">Affected elements</p>
+            <h2 id="issues-title">{t('issuesTitle')}</h2>
+            <p className="meta">{t('affected')}</p>
           </header>
           <p className="answer">
             <span className="answer-figure num" data-testid="total-issues">
               {summary.issues}
             </span>{' '}
-            <span className="answer-unit">{summary.issues === 1 ? 'issue' : 'issues'}</span>
+            <span className="answer-unit">{i18n.unit(summary.issues, 'issue')}</span>
           </p>
           <p className="answer-sub">
-            On {summary.pagesWithIssues} of {plural(counts.scanned, 'scanned page')}
+            {t('onPages', { n: summary.pagesWithIssues, pages: count(counts.scanned, 'scannedPage') })}
           </p>
           <SeverityBreakdown byImpact={summary.byImpact} total={summary.issues} />
         </section>
 
         <section className="panel" aria-labelledby="rules-title">
           <header className="panel-head">
-            <h2 id="rules-title">Rules broken</h2>
-            <p className="meta">{plural(summary.rules.length, 'rule')}</p>
+            <h2 id="rules-title">{t('rulesTitle')}</h2>
+            <p className="meta">{count(summary.rules.length, 'rule')}</p>
           </header>
           {summary.rules.length === 0 ? (
-            <p className="empty-line">No axe-core rule failed on the scanned pages.</p>
+            <p className="empty-line">{t('noRules')}</p>
           ) : (
             <ol className="rule-list">
               {summary.rules.slice(0, MAX_RULES).map((rule, index) => (
                 <li key={rule.id}>
                   <div className="rule-line">
-                    <span className="rule-name">{rule.help}</span>
+                    <span className="rule-name" dir="ltr">
+                      {rule.help}
+                    </span>
                     <span className="num rule-value">{rule.elements}</span>
                   </div>
                   <div className="rule-bar" aria-hidden="true">
@@ -214,45 +232,45 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
                     />
                   </div>
                   <p className="rule-meta">
-                    {IMPACT_LABEL[rule.impact]}, on {plural(rule.pages, 'page')}
+                    {t('ruleMeta', { impact: impactLabel(rule.impact), pages: count(rule.pages, 'page') })}
                   </p>
                 </li>
               ))}
             </ol>
           )}
           {summary.rules.length > MAX_RULES && (
-            <p className="rule-more">{summary.rules.length - MAX_RULES} more in the page list below.</p>
+            <p className="rule-more">{t('moreRules', { n: summary.rules.length - MAX_RULES })}</p>
           )}
         </section>
 
         <section className="panel" aria-labelledby="map-title">
           <header className="panel-head">
-            <h2 id="map-title">Pages</h2>
-            <p className="meta">Select a page to open it</p>
+            <h2 id="map-title">{t('pagesTitle')}</h2>
+            <p className="meta">{t('selectPage')}</p>
           </header>
-          <PageMap pages={report.pages} label="Pages on the website" onSelect={showPage} />
+          <PageMap pages={report.pages} label={t('pagesOnSite')} onSelect={showPage} />
           <PageMapLegend pages={report.pages} />
           <dl className="kv tally">
             <div>
-              <dt>Found</dt>
+              <dt>{t('tallyFound')}</dt>
               <dd className="num" data-testid="total-discovered">
                 {counts.found}
               </dd>
             </div>
             <div>
-              <dt>Scanned</dt>
+              <dt>{t('tallyScanned')}</dt>
               <dd className="num" data-testid="total-succeeded">
                 {counts.scanned}
               </dd>
             </div>
             <div>
-              <dt>Could not be scanned</dt>
+              <dt>{t('tallyFailed')}</dt>
               <dd className="num" data-testid="total-failed">
                 {counts.failed}
               </dd>
             </div>
             <div>
-              <dt>Skipped</dt>
+              <dt>{t('tallySkipped')}</dt>
               <dd className="num" data-testid="total-skipped">
                 {counts.skipped}
               </dd>
@@ -263,18 +281,18 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
 
       <section className="panel pages" aria-labelledby="pages-title">
         <header className="panel-head">
-          <h2 id="pages-title">Page by page</h2>
-          <p className="meta">Most severe first. Open a page to see each issue and the elements involved.</p>
+          <h2 id="pages-title">{t('byPage')}</h2>
+          <p className="meta">{t('byPageHint')}</p>
         </header>
 
         <div className="page-grid page-grid-head" aria-hidden="true">
-          <span className="cell-page">Page</span>
+          <span className="cell-page">{t('colPage')}</span>
           {IMPACTS.map((impact) => (
             <span key={impact} className="cell num">
-              {IMPACT_LABEL[impact]}
+              {impactLabel(impact)}
             </span>
           ))}
-          <span className="cell num">Issues</span>
+          <span className="cell num">{t('colIssues')}</span>
         </div>
 
         <ul className="page-rows">
@@ -287,25 +305,25 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
                     <span className="page-lines">
                       <span className="page-path">{displayPath(page.url)}</span>
                       <span className="sev-inline" aria-hidden="true">
-                        {severityText(page.counts)}
+                        {severityText(page.counts, i18n)}
                       </span>
                     </span>
                   </span>
                   <SeverityCells counts={page.counts} />
                   <span className={`cell num total${page.issueCount === 0 ? ' is-clean' : ''}`}>
-                    {page.issueCount === 0 ? 'None' : page.issueCount}
-                    <span className="visually-hidden">{page.issueCount === 1 ? ' issue' : ' issues'}</span>
+                    {page.issueCount === 0 ? t('none') : page.issueCount}
+                    <span className="visually-hidden"> {t('colIssues')}</span>
                   </span>
                 </summary>
                 <div className="page-body">
                   <p className="page-link">
                     <a href={page.finalUrl} target="_blank" rel="noopener noreferrer">
-                      Open {displayPath(page.url)}
-                      <span className="visually-hidden"> (opens in a new tab)</span>
+                      {t('open', { path: displayPath(page.url) })}
+                      <span className="visually-hidden"> {t('newTab')}</span>
                     </a>
                   </p>
                   {page.violations.length === 0 ? (
-                    <p>axe-core found no issues on this page. Automated checks cannot catch every barrier, so test it by hand too.</p>
+                    <p>{t('pageClean')}</p>
                   ) : (
                     <ul className="violations">
                       {page.violations.map((violation) => (
@@ -330,8 +348,8 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
                     <span className="page-path">{displayPath(page.url)}</span>
                     <span className="row-reason">
                       {page.status === 'failed'
-                        ? `Could not be scanned. ${page.error?.message ?? ''}`
-                        : `Skipped. ${page.note ?? ''}`}
+                        ? `${t('couldNotScan')} ${i18n.error(page.error)}`
+                        : `${t('skippedRow')} ${i18n.note(page.note)}`}
                     </span>
                   </span>
                 </span>

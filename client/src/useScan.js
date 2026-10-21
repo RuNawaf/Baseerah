@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, getScan, startScan } from './api.js';
-import { plural, displayHost } from './format.js';
+import { displayHost } from './format.js';
 import { validateUrl } from './validateUrl.js';
 
 const FINISHED = new Set(['completed', 'completed_with_errors', 'failed']);
@@ -10,13 +10,17 @@ const MAX_POLL_RETRIES = 3;
  * Drives one scan from submission to result.
  * phase: idle → starting → scanning → done | failed
  */
-export function useScan({ pollIntervalMs = 1000 } = {}) {
+export function useScan({ pollIntervalMs = 1000, i18n } = {}) {
   const [phase, setPhase] = useState('idle');
   const [inputError, setInputError] = useState(null);
   const [scan, setScan] = useState(null);
   const [failure, setFailure] = useState(null);
   const [announcement, setAnnouncement] = useState('');
   const retries = useRef(0);
+  // Announcements are written in the language shown when they happen.
+  const i18nRef = useRef(i18n);
+  i18nRef.current = i18n;
+  const tr = (key, vars) => i18nRef.current?.t(key, vars) ?? key;
 
   const submit = useCallback(async (rawUrl) => {
     const checked = validateUrl(rawUrl);
@@ -29,14 +33,14 @@ export function useScan({ pollIntervalMs = 1000 } = {}) {
     setFailure(null);
     setScan(null);
     setPhase('starting');
-    setAnnouncement('Checking that the website can be reached…');
+    setAnnouncement(tr('announceChecking'));
 
     try {
       const created = await startScan(rawUrl.trim());
       retries.current = 0;
       setScan(created);
       setPhase('scanning');
-      setAnnouncement(`Scan started for ${displayHost(created.url)}.`);
+      setAnnouncement(tr('announceStarted', { host: displayHost(created.url) }));
       return true;
     } catch (err) {
       const error = err instanceof ApiError ? err : new ApiError('INTERNAL_ERROR', 'Something went wrong. Try again.');
@@ -63,12 +67,15 @@ export function useScan({ pollIntervalMs = 1000 } = {}) {
         if (latest.status === 'failed') {
           setFailure(latest.error);
           setPhase('failed');
-          setAnnouncement(`Scan failed. ${latest.error?.message ?? ''}`.trim());
+          setAnnouncement(tr('announceFailed', { message: i18nRef.current?.error(latest.error) ?? '' }).trim());
         } else {
           const { totals } = latest.report;
           setPhase('done');
           setAnnouncement(
-            `Scan complete. ${plural(totals.succeededPages, 'page')} checked, ${plural(totals.issues, 'accessibility issue')} found.`,
+            tr('announceDone', {
+              pages: i18nRef.current.count(totals.succeededPages, 'page'),
+              issues: i18nRef.current.count(totals.issues, 'accessibilityIssue'),
+            }),
           );
         }
       } catch (err) {
@@ -77,7 +84,7 @@ export function useScan({ pollIntervalMs = 1000 } = {}) {
         if (err.code === 'SCAN_NOT_FOUND' || retries.current > MAX_POLL_RETRIES) {
           setFailure({ code: err.code, message: err.message });
           setPhase('failed');
-          setAnnouncement(`Scan failed. ${err.message}`);
+          setAnnouncement(tr('announceFailed', { message: i18nRef.current?.error(err) ?? err.message }));
         } else {
           setScan((current) => ({ ...current })); // schedule another attempt
         }

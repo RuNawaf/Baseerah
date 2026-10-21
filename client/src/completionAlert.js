@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { displayHost, plural } from './format.js';
+import { displayHost } from './format.js';
 
-const BASE_TITLE = 'Baseerah – website accessibility scanner';
-const RESULT_TITLES = new Set(['Scan complete – Baseerah', 'Scan failed – Baseerah']);
+const RESULT_TITLE_KEYS = ['titleDone', 'titleFailed'];
 const ICON = '/favicon-64.png';
 
 export function notificationPermission() {
@@ -19,20 +18,20 @@ export function requestNotificationPermission() {
   }
 }
 
-function describe(phase, scan, failure) {
+function describe(phase, scan, failure, { t, count, error }) {
   if (phase === 'done') {
     const { totals } = scan.report;
     return {
-      title: 'Scan complete',
-      tabTitle: 'Scan complete – Baseerah',
-      body: `${displayHost(scan.url)}: ${plural(totals.succeededPages, 'page')} checked, ${plural(totals.issues, 'accessibility issue')} found.`,
+      title: t('doneTitle'),
+      tabTitle: t('titleDone'),
+      body: t('notifyDoneBody', {
+        host: displayHost(scan.url),
+        pages: count(totals.succeededPages, 'page'),
+        issues: count(totals.issues, 'accessibilityIssue'),
+      }),
     };
   }
-  return {
-    title: 'Scan failed',
-    tabTitle: 'Scan failed – Baseerah',
-    body: failure?.message ?? 'The scan could not be completed.',
-  };
+  return { title: t('notifyFailedTitle'), tabTitle: t('titleFailed'), body: failure ? error(failure) : t('notifyFailedBody') };
 }
 
 /**
@@ -40,18 +39,22 @@ function describe(phase, scan, failure) {
  * - a system notification (if allowed), which brings this tab back and opens the report when clicked
  * - the tab title shows live progress while scanning and the result afterwards, until the tab is viewed again
  */
-export function useCompletionAlert({ phase, scan, failure, onOpenReport }) {
+export function useCompletionAlert({ phase, scan, failure, onOpenReport, i18n }) {
   const notifiedScanId = useRef(null);
   const notificationRef = useRef(null);
   const openReportRef = useRef(onOpenReport);
   openReportRef.current = onOpenReport;
+  const i18nRef = useRef(i18n);
+  i18nRef.current = i18n;
+  const baseTitle = i18n.t('pageTitle');
   const [permission, setPermission] = useState(notificationPermission);
 
   // Coming back to the tab clears the result from the title and dismisses the notification.
   useEffect(() => {
     const onVisible = () => {
       if (document.hidden) return;
-      if (RESULT_TITLES.has(document.title)) document.title = BASE_TITLE;
+      const { t } = i18nRef.current;
+      if (RESULT_TITLE_KEYS.some((key) => document.title === t(key))) document.title = t('pageTitle');
       notificationRef.current?.close();
       notificationRef.current = null;
     };
@@ -61,14 +64,15 @@ export function useCompletionAlert({ phase, scan, failure, onOpenReport }) {
 
   // Live progress in the tab title.
   useEffect(() => {
+    const { t } = i18nRef.current;
     if (phase === 'scanning' && scan) {
       const { progress } = scan;
       const done = (progress?.succeeded ?? 0) + (progress?.failed ?? 0) + (progress?.skipped ?? 0);
-      document.title = progress?.discovered ? `Scanning ${done}/${progress.discovered} – Baseerah` : 'Scanning… – Baseerah';
-    } else if (phase === 'idle' || phase === 'starting') {
-      document.title = BASE_TITLE;
+      document.title = progress?.discovered ? t('titleScanning', { done, total: progress.discovered }) : t('titleScanningStart');
+    } else if (phase === 'idle' || phase === 'starting' || !document.hidden) {
+      document.title = baseTitle;
     }
-  }, [phase, scan]);
+  }, [phase, scan, baseTitle]);
 
   // Result: notification and tab title, once per scan.
   useEffect(() => {
@@ -76,11 +80,11 @@ export function useCompletionAlert({ phase, scan, failure, onOpenReport }) {
     notifiedScanId.current = scan.scanId;
 
     if (!document.hidden) {
-      document.title = BASE_TITLE; // the on-page notice is enough
+      document.title = i18nRef.current.t('pageTitle'); // the on-page notice is enough
       return;
     }
 
-    const message = describe(phase, scan, failure);
+    const message = describe(phase, scan, failure, i18nRef.current);
     document.title = message.tabTitle;
     if (notificationPermission() !== 'granted') return;
 

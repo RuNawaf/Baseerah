@@ -250,3 +250,55 @@ describe('US-06: complete scan failure', () => {
     expect(await screen.findByRole('region', { name: 'The scan could not be completed' })).toHaveTextContent('has expired');
   });
 });
+
+describe('language switch', () => {
+  it('switches the whole interface to Arabic and back', async () => {
+    mockApi({ post: [400, { error: { code: 'BLOCKED_ADDRESS', message: 'This address points to a private network.' } }] });
+    const { user, input } = setup();
+
+    await user.click(screen.getByRole('button', { name: /العربية/ }));
+    expect(document.documentElement).toHaveAttribute('lang', 'ar');
+    expect(document.documentElement).toHaveAttribute('dir', 'rtl');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('بصيرة');
+    expect(screen.getByLabelText('رابط الموقع')).toBe(input);
+
+    // Errors from the API are shown in Arabic, from their code.
+    await user.type(input, 'http://10.0.0.1');
+    await user.click(screen.getByRole('button', { name: 'افحص الموقع' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('هذا الرابط يشير إلى شبكة خاصة أو داخلية');
+
+    await user.click(screen.getByRole('button', { name: /English/ }));
+    expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Baseerah');
+    window.localStorage.clear();
+  });
+
+  it('uses Arabic plural forms', async () => {
+    const { countWord } = await import('../src/i18n.js');
+    expect(countWord('ar', 1, 'page')).toBe('صفحة واحدة');
+    expect(countWord('ar', 2, 'page')).toBe('صفحتان');
+    expect(countWord('ar', 5, 'page')).toBe('5 صفحات');
+    expect(countWord('ar', 12, 'page')).toBe('12 صفحة');
+    expect(countWord('en', 1, 'page')).toBe('1 page');
+  });
+});
+
+describe('product preview', () => {
+  it('brings the card behind to the front when selected', async () => {
+    mockApi({ post: [202, {}] });
+    const { user } = setup();
+    const stack = document.querySelector('.preview-stack');
+    expect(stack.querySelector('.card-report')).toHaveClass('is-front');
+
+    // Clicking the cards swaps them.
+    await user.click(stack);
+    expect(stack.querySelector('.card-scan')).toHaveClass('is-front');
+
+    // The labelled button does the same for keyboard and screen reader users.
+    const button = screen.getByRole('button', { name: 'Show the report' });
+    button.focus();
+    await user.keyboard('{Enter}');
+    expect(stack.querySelector('.card-report')).toHaveClass('is-front');
+    expect(screen.getByRole('button', { name: 'Show the scan in progress' })).toBeInTheDocument();
+  });
+});

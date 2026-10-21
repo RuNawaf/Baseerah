@@ -70,6 +70,14 @@ link (`#/report/<scanId>`), which works for as long as the server keeps the scan
 To check the design: `node .claude/skills/design-taste-frontend/scripts/lint.mjs --app client/src` and
 `node .claude/skills/design-taste-frontend/scripts/inspect.mjs --app <url>` (needs Chrome; set `CHROME_PATH` if needed).
 
+## Languages
+
+The interface is available in English and Arabic. The round **ع** button in the top bar switches to Arabic (right to
+left, set in Readex Pro); in Arabic the same button shows **En**. The choice is remembered in the browser. All
+interface text, error messages, announcements, the tab title and notifications are translated in
+`client/src/i18n.js`, with Arabic plural forms. Rule names and descriptions come from axe-core, which has no Arabic
+translation, so they stay in English.
+
 ## Completion alerts
 
 When a valid scan starts, the browser asks once for permission to show notifications. If the developer switches

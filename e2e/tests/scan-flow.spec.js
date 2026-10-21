@@ -99,3 +99,17 @@ test('the scan page has no serious accessibility issues and works with the keybo
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'View report' })).toBeFocused();
 });
+
+test('the Arabic interface reads right to left and has no serious accessibility issues', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'ع العربية' }).click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('بصيرة');
+  await page.screenshot({ path: 'test-results/screens/arabic.png', fullPage: true });
+  await expectNoSeriousAxeIssues(page);
+
+  // The choice is remembered on reload.
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('بصيرة');
+});

@@ -15,17 +15,22 @@ export function displayHost(url) {
   }
 }
 
-const timeFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+// Arabic keeps Western digits and the Gregorian calendar, matching the numbers elsewhere on the page.
+const LOCALES = { en: undefined, ar: 'ar-u-nu-latn-ca-gregory' };
+const timeFormats = {};
 
-export function formatTime(iso) {
-  return iso ? timeFormat.format(new Date(iso)) : '—';
+export function formatTime(iso, lang = 'en') {
+  if (!iso) return '—';
+  timeFormats[lang] ??= new Intl.DateTimeFormat(LOCALES[lang], { dateStyle: 'medium', timeStyle: 'medium' });
+  return timeFormats[lang].format(new Date(iso));
 }
 
-export function formatDuration(startIso, endIso) {
+export function formatDuration(startIso, endIso, lang = 'en') {
   if (!startIso || !endIso) return '';
   const seconds = Math.max(0, Math.round((Date.parse(endIso) - Date.parse(startIso)) / 1000));
-  if (seconds < 60) return `${seconds} s`;
-  return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
+  const [s, m] = lang === 'ar' ? ['ث', 'د'] : ['s', 'min'];
+  if (seconds < 60) return `${seconds} ${s}`;
+  return `${Math.floor(seconds / 60)} ${m} ${seconds % 60} ${s}`;
 }
 
 export function plural(count, one, many = `${one}s`) {
