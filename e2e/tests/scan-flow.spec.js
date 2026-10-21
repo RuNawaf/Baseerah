@@ -4,6 +4,10 @@ import { expect, test } from '@playwright/test';
 const FIXTURE_URL = 'http://127.0.0.1:4400/';
 
 async function expectNoSeriousAxeIssues(page) {
+  // Check the page as it rests: entrance motion finished and every section shown (axe measures live opacity).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(() => document.querySelectorAll('.reveal').forEach((node) => node.classList.add('is-visible')));
+  await page.waitForTimeout(100);
   const results = await new AxeBuilder({ page }).analyze();
   const serious = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
   expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
@@ -83,8 +87,9 @@ test('the scan page has no serious accessibility issues and works with the keybo
 
   await page.keyboard.press('Tab'); // skip link
   await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
-  await page.keyboard.press('Tab'); // brand
-  await page.keyboard.press('Tab');
+  // The top bar's "Scan a website" action jumps straight to the field.
+  await page.getByRole('button', { name: 'Scan a website' }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByLabel('Website URL')).toBeFocused();
   await page.keyboard.type(FIXTURE_URL);
   await page.keyboard.press('Tab');

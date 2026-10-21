@@ -13,10 +13,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
       <label htmlFor="url" className="field-label">
         Website URL
       </label>
-      <p id="url-hint" className="field-hint">
-        The start page of a public website, for example https://www.ksu.edu.sa.
-      </p>
-      <div className={`field-row${error ? ' has-error' : ''}`}>
+      <div className={`command${error ? ' has-error' : ''}`}>
         <input
           ref={inputRef}
           id="url"
@@ -26,17 +23,20 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
           autoComplete="url"
           autoCapitalize="none"
           spellCheck="false"
-          placeholder="https://"
+          placeholder="https://www.ksu.edu.sa"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={describedBy}
           readOnly={busy}
         />
-        <button type="submit" className="btn btn-primary" disabled={busy}>
+        <button type="submit" className="command-button" disabled={busy}>
           {phase === 'starting' ? 'Checking address…' : phase === 'scanning' ? 'Scanning…' : 'Scan website'}
         </button>
       </div>
+      <p id="url-hint" className="field-hint">
+        The start page of a public website. Only public pages are scanned.
+      </p>
       {error && (
         <p id="url-error" className="field-error" role="alert">
           <svg className="field-error-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">

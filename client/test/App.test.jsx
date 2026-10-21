@@ -17,7 +17,7 @@ describe('US-01: enter a website URL', () => {
     const { input, button } = setup();
     expect(input).toHaveAttribute('id', 'url');
     expect(button).toBeEnabled();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Scan a website');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Baseerah');
   });
 
   it('shows a required-field message and does not start a scan when the input is empty', async () => {
@@ -202,8 +202,10 @@ describe('US-04 / US-05: progress, completion and report', () => {
     mockApi({ post: [202, {}] });
     setup();
     const about = screen.getByRole('region', { name: 'What a scan does' });
-    expect(await within(about).findByText('Up to 50 on the same website')).toBeInTheDocument();
-    expect(about).toHaveTextContent('15 s per page, 3 pages at a time');
+    await waitFor(() => expect(within(about).getByText('50').closest('dt')).toHaveTextContent('50 pages'));
+    expect(within(about).getByText('15').closest('dt')).toHaveTextContent('15 s per page');
+    expect(about).toHaveTextContent('with 3 pages checked at a time');
+    expect(within(about).getByText('5').closest('dt')).toHaveTextContent('5 links deep');
   });
 
   it('shows a warning when a safety limit stopped the scan', async () => {

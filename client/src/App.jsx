@@ -5,9 +5,10 @@ import { CompletionNotice } from './components/CompletionNotice.jsx';
 import { FailureNotice } from './components/FailureNotice.jsx';
 import { Masthead } from './components/Masthead.jsx';
 import { Report } from './components/Report.jsx';
+import { Hero } from './components/Hero.jsx';
 import { ScanAbout } from './components/ScanAbout.jsx';
-import { ScanForm } from './components/ScanForm.jsx';
-import { ScanProgress, ScanProgressEmpty } from './components/ScanProgress.jsx';
+import { Statement } from './components/Statement.jsx';
+import { ScanProgress } from './components/ScanProgress.jsx';
 import { useScan } from './useScan.js';
 import { validateUrl } from './validateUrl.js';
 
@@ -52,11 +53,42 @@ export default function App({ pollIntervalMs = 1000 }) {
     }
 
     const onHashChange = () => {
-      if (!reportIdFromHash()) setView('scan');
+      if (reportIdFromHash()) return;
+      setView('scan');
+      // In-page links such as #how may point at a section that only exists once the scan view is back.
+      const target = window.location.hash.length > 1 && document.getElementById(window.location.hash.slice(1));
+      requestAnimationFrame(() => (target || document.getElementById(window.location.hash.slice(1)))?.scrollIntoView?.());
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [resume]);
+
+  // Sections rise once as they scroll into view. Without script, or with reduced motion, they are simply shown.
+  useEffect(() => {
+    if (view !== 'scan' || !('IntersectionObserver' in window)) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    document.documentElement.classList.add('js-motion');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    document.querySelectorAll('.reveal:not(.is-visible)').forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [view]);
+
+  // When a scan starts, bring its progress into view; it sits below the first screen.
+  useEffect(() => {
+    if (phase !== 'scanning' || view !== 'scan') return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.run')?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }, [phase, view]);
 
   useEffect(() => {
     if (inputError) inputRef.current?.focus();
@@ -84,6 +116,14 @@ export default function App({ pollIntervalMs = 1000 }) {
     setView('scan');
   }
 
+  function goToScanForm() {
+    if (view === 'report') leaveReport();
+    requestAnimationFrame(() => {
+      window.scrollTo?.(0, 0);
+      inputRef.current?.focus();
+    });
+  }
+
   function startNewScan() {
     leaveReport();
     reset();
@@ -102,7 +142,7 @@ export default function App({ pollIntervalMs = 1000 }) {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Masthead onHome={startNewScan} />
+      <Masthead onHome={startNewScan} onScanClick={goToScanForm} />
       <main id="main" className="sheet" tabIndex={-1}>
         {/* Polite status messages for screen readers: scan started, finished, failed. */}
         <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
@@ -113,42 +153,31 @@ export default function App({ pollIntervalMs = 1000 }) {
           <Report scan={scan} headingRef={reportHeadingRef} onNewScan={startNewScan} onScanAgain={scanAgain} />
         ) : (
           <>
-            <div className="title-row">
-              <div>
-                <h1 id="scan-title">Scan a website</h1>
-                <p className="sub">
-                  Baseerah follows a website&rsquo;s internal links, checks every page with axe-core and lists the barriers
-                  page by page.
-                </p>
-              </div>
-            </div>
+            <Hero
+              value={url}
+              onChange={(value) => {
+                setUrl(value);
+                if (inputError) clearInputError();
+              }}
+              onSubmit={() => scanUrl(url)}
+              error={inputError}
+              busy={busy}
+              phase={phase}
+              inputRef={inputRef}
+            />
 
-            <div className="grid start">
-              <section className="panel form-panel" aria-labelledby="scan-title">
-                <ScanForm
-                  value={url}
-                  onChange={(value) => {
-                    setUrl(value);
-                    if (inputError) clearInputError();
-                  }}
-                  onSubmit={() => scanUrl(url)}
-                  error={inputError}
-                  busy={busy}
-                  phase={phase}
-                  inputRef={inputRef}
-                />
+            {(phase === 'done' || phase === 'failed' || (scan && phase === 'scanning')) && (
+              <section className="run" aria-label="Current scan" data-ui>
+                {phase === 'done' && scan?.report && <CompletionNotice ref={noticeRef} scan={scan} onViewReport={openReport} />}
+                {phase === 'failed' && <FailureNotice ref={noticeRef} error={failure} onRetry={() => scanUrl(url)} />}
+                {scan && phase !== 'failed' && (
+                  <ScanProgress scan={scan} phase={phase} notifications={completionAlert.permission} />
+                )}
               </section>
-              <ScanAbout limits={limits} />
-            </div>
-
-            {phase === 'done' && scan?.report && <CompletionNotice ref={noticeRef} scan={scan} onViewReport={openReport} />}
-            {phase === 'failed' && <FailureNotice ref={noticeRef} error={failure} onRetry={() => scanUrl(url)} />}
-
-            {(phase === 'idle' || phase === 'starting') && !scan && <ScanProgressEmpty />}
-
-            {scan && phase !== 'idle' && phase !== 'failed' && (
-              <ScanProgress scan={scan} phase={phase} notifications={completionAlert.permission} />
             )}
+
+            <Statement />
+            <ScanAbout limits={limits} />
           </>
         )}
 

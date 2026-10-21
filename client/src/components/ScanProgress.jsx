@@ -69,18 +69,3 @@ export function ScanProgress({ scan, phase, notifications = 'unsupported' }) {
   );
 }
 
-/** Before the first scan: the frame where progress will appear, and what its tiles mean. */
-export function ScanProgressEmpty() {
-  return (
-    <section className="panel progress progress-empty" aria-labelledby="progress-empty-title">
-      <header className="panel-head">
-        <h2 id="progress-empty-title">Progress</h2>
-      </header>
-      <p>
-        Every page Baseerah finds on the website appears here as a sheet, filled in as it is checked. The darker the
-        sheet, the more severe the worst issue on that page.
-      </p>
-      <PageMapLegend kinds={['queued', 'scanning', 'critical', 'serious', 'moderate', 'minor', 'clean', 'failed']} />
-    </section>
-  );
-}
