@@ -33,6 +33,7 @@ describe('GET /api/health', () => {
     const res = await buildApp().get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
+    expect(res.body.limits).toEqual({ maxPages: 50, maxDepth: 5, pageTimeoutMs: 8000, concurrency: 3, maxDurationMs: 600000 });
   });
 });
 
@@ -126,6 +127,9 @@ describe('full website scan through the API (US-04, US-05)', () => {
     );
     expect(report.totals.issues).toBeGreaterThan(0);
     expect(report.pages.find((p) => p.url.endsWith('/missing.html')).error.code).toBe('HTTP_ERROR');
+    // The home page has an image without alt text, which axe rates critical.
+    expect(report.pages.find((p) => p.url === `${fixtures.siteOrigin}/`).worstImpact).toBe('critical');
+    expect(report.pages.find((p) => p.url.includes('/deep/1.html')).worstImpact).toBeNull();
     expect(report).not.toHaveProperty('score');
   });
 

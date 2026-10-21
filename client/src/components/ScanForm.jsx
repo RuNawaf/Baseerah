@@ -14,7 +14,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
         Website URL
       </label>
       <p id="url-hint" className="field-hint">
-        For example https://example.com. Only public pages are scanned.
+        The start page of a public website, for example https://www.ksu.edu.sa.
       </p>
       <div className={`field-row${error ? ' has-error' : ''}`}>
         <input
@@ -33,7 +33,7 @@ export function ScanForm({ value, onChange, onSubmit, error, busy, phase, inputR
           aria-describedby={describedBy}
           readOnly={busy}
         />
-        <button type="submit" className="button-primary" disabled={busy} aria-disabled={busy}>
+        <button type="submit" className="btn btn-primary" disabled={busy}>
           {phase === 'starting' ? 'Checking address…' : phase === 'scanning' ? 'Scanning…' : 'Scan website'}
         </button>
       </div>

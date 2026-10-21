@@ -2,6 +2,8 @@ import { vi } from 'vitest';
 
 export const SITE = 'https://bakery.example';
 
+export const HEALTH_LIMITS = { maxPages: 50, maxDepth: 5, pageTimeoutMs: 15000, concurrency: 3, maxDurationMs: 600000 };
+
 export function jsonResponse(status, body) {
   return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } }));
 }
@@ -37,6 +39,7 @@ export const completedReport = {
   pages: [
     page('/', 'succeeded', {
       issueCount: 3,
+      worstImpact: 'critical',
       violations: [
         {
           id: 'image-alt',
@@ -52,6 +55,7 @@ export const completedReport = {
     }),
     page('/about.html', 'succeeded', {
       issueCount: 1,
+      worstImpact: 'serious',
       violations: [
         {
           id: 'label',
@@ -79,11 +83,13 @@ export const completedReport = {
 export function mockApi({ post, polls = [] }) {
   let pollIndex = 0;
   const fetchMock = vi.fn((url, options = {}) => {
+    if (url === '/api/health') return jsonResponse(200, { status: 'ok', limits: HEALTH_LIMITS });
     if (options.method === 'POST') return typeof post === 'function' ? post() : jsonResponse(...post);
     const next = polls[Math.min(pollIndex, polls.length - 1)];
     pollIndex += 1;
     return typeof next === 'function' ? next() : jsonResponse(200, next);
   });
   vi.stubGlobal('fetch', fetchMock);
+  fetchMock.scanCalls = () => fetchMock.mock.calls.filter(([url]) => url.startsWith('/api/scans'));
   return fetchMock;
 }

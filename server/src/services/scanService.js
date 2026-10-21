@@ -24,6 +24,12 @@ function countPages(pages) {
   return counts;
 }
 
+const IMPACT_ORDER = ['critical', 'serious', 'moderate', 'minor'];
+
+function worstImpact(violations = []) {
+  return IMPACT_ORDER.find((impact) => violations.some((violation) => violation.impact === impact)) ?? null;
+}
+
 function publicPage(page, { withViolations }) {
   const view = {
     url: page.url,
@@ -35,6 +41,7 @@ function publicPage(page, { withViolations }) {
     durationMs: page.durationMs ?? null,
     error: page.error ?? null,
     note: page.note ?? null,
+    worstImpact: page.status === PAGE_STATUS.SUCCEEDED ? worstImpact(page.violations) : null,
   };
   if (withViolations) view.violations = page.violations ?? [];
   return view;

@@ -2,7 +2,7 @@
 // are caught before a request is sent. The server always validates again.
 export const MESSAGES = {
   EMPTY_URL: 'Enter a website URL to scan.',
-  INVALID_URL: 'This is not a valid web address. Check the spelling, for example https://example.com.',
+  INVALID_URL: 'This is not a valid web address. Check the spelling, for example https://www.ksu.edu.sa.',
   UNSUPPORTED_PROTOCOL: 'Only http:// and https:// addresses can be scanned.',
   CREDENTIALS_NOT_ALLOWED: 'Remove the username or password from the address. Baseerah only scans public pages.',
 };

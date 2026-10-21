@@ -90,6 +90,27 @@ export function useScan({ pollIntervalMs = 1000 } = {}) {
     };
   }, [phase, scan, pollIntervalMs]);
 
+  /** Reopens a scan by ID (from a #/report/... link): shows its report, resumes polling, or explains why not. */
+  const resume = useCallback(async (scanId) => {
+    try {
+      const latest = await getScan(scanId);
+      setScan(latest);
+      if (latest.status === 'failed') {
+        setFailure(latest.error);
+        setPhase('failed');
+      } else if (latest.report) {
+        setPhase('done');
+      } else {
+        setPhase('scanning');
+      }
+      return latest;
+    } catch (err) {
+      setFailure({ code: err.code, message: err.message });
+      setPhase('failed');
+      return null;
+    }
+  }, []);
+
   const reset = useCallback(() => {
     setPhase('idle');
     setScan(null);
@@ -98,5 +119,5 @@ export function useScan({ pollIntervalMs = 1000 } = {}) {
     setAnnouncement('');
   }, []);
 
-  return { phase, inputError, scan, failure, announcement, submit, reset, clearInputError: () => setInputError(null) };
+  return { phase, inputError, scan, failure, announcement, submit, resume, reset, clearInputError: () => setInputError(null) };
 }

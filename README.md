@@ -59,6 +59,17 @@ Then scan `http://127.0.0.1:4400/`.
 
 If Chromium is installed somewhere other than Playwright's default, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`.
 
+## Design
+
+The interface follows the `design-taste-frontend` skill (`.claude/skills/`, app style "framed sheet", kept with the
+Baseerah logo's navy and cyan). A blue-grey frame holds the logo; the work sits on one white sheet. The report opens
+with its answer: the issue total, split by severity, and the one rule to fix first. The page map (each page of the site
+as a folded sheet, darker for more severe issues) is shared by the live scan and the report. Each report has its own
+link (`#/report/<scanId>`), which works for as long as the server keeps the scan (`SCAN_TTL_MINUTES`).
+
+To check the design: `node .claude/skills/design-taste-frontend/scripts/lint.mjs --app client/src` and
+`node .claude/skills/design-taste-frontend/scripts/inspect.mjs --app <url>` (needs Chrome; set `CHROME_PATH` if needed).
+
 ## Completion alerts
 
 When a valid scan starts, the browser asks once for permission to show notifications. If the developer switches
@@ -136,7 +147,7 @@ All responses are JSON. Errors always have the shape `{ "error": { "code": "..."
 contain stack traces or server details.
 
 ### `GET /api/health`
-`200 { "status": "ok", "service": "baseerah-api", "time": "..." }`
+`200 { "status": "ok", "service": "baseerah-api", "time": "...", "limits": { "maxPages": 50, ... } }`. The scan page shows these limits.
 
 ### `POST /api/scans`
 Body: `{ "url": "https://example.com" }`. A bare domain is treated as `https://`.
@@ -160,7 +171,7 @@ The URL is validated (format, protocol, SSRF rules, reachability) **before** a s
   "progress": { "discovered": 10, "queued": 2, "scanning": 3, "succeeded": 4, "failed": 1, "skipped": 0, "scanned": 5 },
   "limitsReached": [{ "type": "maxPages", "message": "..." }],
   "error": null,                       // { code, message } when status is "failed"
-  "pages": [{ "url", "finalUrl", "depth", "status", "httpStatus", "issueCount", "durationMs", "error", "note" }],
+  "pages": [{ "url", "finalUrl", "depth", "status", "httpStatus", "issueCount", "worstImpact", "durationMs", "error", "note" }],
   "report": null                       // only for completed / completed_with_errors
 }
 ```

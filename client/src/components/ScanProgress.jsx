@@ -16,14 +16,15 @@ export function ScanProgress({ scan, phase, notifications = 'unsupported' }) {
   const running = phase === 'scanning';
 
   return (
-    <section className="progress" aria-labelledby="progress-title" aria-busy={running}>
-      <h2 id="progress-title">
-        {running ? `Scanning ${displayHost(scan.url)}` : `Scanned ${displayHost(scan.url)}`}
-      </h2>
+    <section className="panel progress" aria-labelledby="progress-title" aria-busy={running}>
+      <header className="panel-head">
+        <h2 id="progress-title">
+          {running ? `Scanning ${displayHost(scan.url)}` : `Scanned ${displayHost(scan.url)}`}
+        </h2>
+        {running && <p className="meta">{NOTIFY_HINT[notifications] ?? NOTIFY_HINT.unsupported}</p>}
+      </header>
 
-      {running && <p className="progress-hint">{NOTIFY_HINT[notifications] ?? NOTIFY_HINT.unsupported}</p>}
-
-      {running && progress.discovered === 0 ? (
+      {running && !progress.discovered ? (
         <p className="progress-line">Opening the first page…</p>
       ) : (
         <>
@@ -35,7 +36,7 @@ export function ScanProgress({ scan, phase, notifications = 'unsupported' }) {
         </>
       )}
 
-      <dl className="counts">
+      <dl className="strip">
         <div>
           <dt>Found</dt>
           <dd data-testid="count-discovered">{progress.discovered ?? 0}</dd>
@@ -52,14 +53,34 @@ export function ScanProgress({ scan, phase, notifications = 'unsupported' }) {
           <dt>Failed</dt>
           <dd data-testid="count-failed">{progress.failed ?? 0}</dd>
         </div>
+        <div>
+          <dt>Skipped</dt>
+          <dd data-testid="count-skipped">{progress.skipped ?? 0}</dd>
+        </div>
       </dl>
 
       {pages.length > 0 && (
-        <>
+        <div className="map-block">
           <PageMap pages={pages} />
-          <PageMapLegend />
-        </>
+          <PageMapLegend pages={pages} />
+        </div>
       )}
+    </section>
+  );
+}
+
+/** Before the first scan: the frame where progress will appear, and what its tiles mean. */
+export function ScanProgressEmpty() {
+  return (
+    <section className="panel progress progress-empty" aria-labelledby="progress-empty-title">
+      <header className="panel-head">
+        <h2 id="progress-empty-title">Progress</h2>
+      </header>
+      <p>
+        Every page Baseerah finds on the website appears here as a sheet, filled in as it is checked. The darker the
+        sheet, the more severe the worst issue on that page.
+      </p>
+      <PageMapLegend kinds={['queued', 'scanning', 'critical', 'serious', 'moderate', 'minor', 'clean', 'failed']} />
     </section>
   );
 }

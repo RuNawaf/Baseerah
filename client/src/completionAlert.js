@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { displayHost, plural } from './format.js';
 
 const BASE_TITLE = 'Baseerah – website accessibility scanner';
+const RESULT_TITLES = new Set(['Scan complete – Baseerah', 'Scan failed – Baseerah']);
 const ICON = '/favicon-64.png';
 
 export function notificationPermission() {
@@ -23,13 +24,13 @@ function describe(phase, scan, failure) {
     const { totals } = scan.report;
     return {
       title: 'Scan complete',
-      tabTitle: `✓ Scan complete – Baseerah`,
+      tabTitle: 'Scan complete – Baseerah',
       body: `${displayHost(scan.url)}: ${plural(totals.succeededPages, 'page')} checked, ${plural(totals.issues, 'accessibility issue')} found.`,
     };
   }
   return {
     title: 'Scan failed',
-    tabTitle: `✕ Scan failed – Baseerah`,
+    tabTitle: 'Scan failed – Baseerah',
     body: failure?.message ?? 'The scan could not be completed.',
   };
 }
@@ -50,7 +51,7 @@ export function useCompletionAlert({ phase, scan, failure, onOpenReport }) {
   useEffect(() => {
     const onVisible = () => {
       if (document.hidden) return;
-      if (document.title.startsWith('✓') || document.title.startsWith('✕')) document.title = BASE_TITLE;
+      if (RESULT_TITLES.has(document.title)) document.title = BASE_TITLE;
       notificationRef.current?.close();
       notificationRef.current = null;
     };

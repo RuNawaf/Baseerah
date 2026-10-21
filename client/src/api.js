@@ -44,3 +44,7 @@ export function startScan(url) {
 export function getScan(scanId) {
   return request(`/api/scans/${encodeURIComponent(scanId)}`);
 }
+
+export function getHealth() {
+  return request('/api/health');
+}

@@ -1,13 +1,21 @@
 import logo from '../assets/baseerah-logo.png';
 
-export function Masthead() {
+/** The tinted frame's top bar: the product's mark and name. */
+export function Masthead({ onHome }) {
   return (
-    <header className="masthead">
-      <div className="masthead-inner">
-        <a className="brand" href="/">
-          <img src={logo} alt="Baseerah (بصيرة) home" width="198" height="49" />
-        </a>
-      </div>
+    <header className="topbar">
+      <a
+        className="brand"
+        href="#/"
+        onClick={(event) => {
+          if (onHome) {
+            event.preventDefault();
+            onHome();
+          }
+        }}
+      >
+        <img src={logo} alt="Baseerah (بصيرة) home" width="198" height="49" />
+      </a>
     </header>
   );
 }

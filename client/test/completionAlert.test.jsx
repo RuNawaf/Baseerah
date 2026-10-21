@@ -35,6 +35,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.history.replaceState(null, '', '/');
 });
 
 const running = scanState('running', { pages: [page('/', 'succeeded', { issueCount: 3 }), page('/about.html', 'scanning'), page('/contact/', 'queued')] });
@@ -78,7 +79,7 @@ describe('completion alert when the developer is in another tab', () => {
     expect(notification.title).toBe('Scan complete');
     expect(notification.options.body).toBe('bakery.example: 2 pages checked, 4 accessibility issues found.');
     expect(notification.options.icon).toBe('/favicon-64.png');
-    expect(document.title).toBe('✓ Scan complete – Baseerah');
+    expect(document.title).toBe('Scan complete – Baseerah');
 
     // Clicking the notification brings the tab back and opens the report.
     act(() => notification.onclick());
@@ -97,7 +98,7 @@ describe('completion alert when the developer is in another tab', () => {
     await vi.waitFor(() => expect(notifications).toHaveLength(1));
     expect(notifications[0].title).toBe('Scan failed');
     expect(notifications[0].options.body).toBe('The page did not finish loading within 15 seconds.');
-    expect(document.title).toBe('✕ Scan failed – Baseerah');
+    expect(document.title).toBe('Scan failed – Baseerah');
   });
 
   it('does not send a system notification while the tab is visible', async () => {
@@ -111,7 +112,7 @@ describe('completion alert when the developer is in another tab', () => {
     FakeNotification.permission = 'denied';
     await startScan([running, done]);
     setHidden(true);
-    await vi.waitFor(() => expect(document.title).toBe('✓ Scan complete – Baseerah'));
+    await vi.waitFor(() => expect(document.title).toBe('Scan complete – Baseerah'));
     expect(notifications).toHaveLength(0);
   });
 });

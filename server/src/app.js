@@ -32,7 +32,7 @@ export function createApp({ config, logger, scanService }) {
   );
   app.use(express.json({ limit: '10kb' }));
 
-  app.use('/api/health', healthRoutes());
+  app.use('/api/health', healthRoutes({ config }));
   app.use(
     '/api/scans',
     scanRoutes({ scanService, scanRateLimiter: createScanRateLimiter({ limitPerMinute: config.rateLimitPerMinute }) }),

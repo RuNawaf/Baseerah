@@ -29,17 +29,27 @@ test('scans the whole fixture website and opens the report @mobile', async ({ pa
 
   await notice.getByRole('button', { name: 'View report' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Accessibility report for 127.0.0.1:4400' })).toBeFocused();
+  await expect(page).toHaveURL(/#\/report\/[0-9a-f-]{36}$/);
   await expect(page.getByTestId('total-discovered')).toHaveText('10');
   await expect(page.getByTestId('total-succeeded')).toHaveText('8');
   await expect(page.getByTestId('total-failed')).toHaveText('1');
-  await expect(page.getByRole('region', { name: 'Pages that could not be scanned (1)' })).toContainText('/missing.html');
+  await expect(page.getByTestId('total-skipped')).toHaveText('1');
+  await expect(page.getByText(/^Fix first:/)).toBeVisible();
+
+  const rows = page.getByRole('region', { name: 'Page by page' });
+  await expect(rows).toContainText('/missing.html');
+  await expect(rows).toContainText('Could not be scanned. The page responded with HTTP 404.');
 
   // External links were never crawled.
   await expect(page.getByText('127.0.0.1:4401')).toHaveCount(0);
 
-  await page.getByRole('region', { name: 'Scanned pages (8)' }).getByText('/', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Images must have alternative text' }).first()).toBeVisible();
+  await rows.locator('summary').first().click();
+  await expect(rows.getByRole('heading', { level: 4 }).first()).toBeVisible();
   await page.screenshot({ path: `test-results/screens/report-${test.info().project.name}.png`, fullPage: true });
+
+  // The report link survives a reload.
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'Accessibility report for 127.0.0.1:4400' })).toBeVisible();
 
   await expectNoSeriousAxeIssues(page);
 });

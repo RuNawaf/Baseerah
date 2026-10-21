@@ -17,7 +17,7 @@ describe('US-01: enter a website URL', () => {
     const { input, button } = setup();
     expect(input).toHaveAttribute('id', 'url');
     expect(button).toBeEnabled();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/accessibility barriers/i);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Scan a website');
   });
 
   it('shows a required-field message and does not start a scan when the input is empty', async () => {
@@ -27,7 +27,7 @@ describe('US-01: enter a website URL', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Enter a website URL to scan.');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveFocus();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock.scanCalls()).toHaveLength(0);
   });
 
   it('can be submitted with the keyboard', async () => {
@@ -50,7 +50,7 @@ describe('US-02 / US-03: invalid URL errors', () => {
     await user.click(button);
     expect(screen.getByRole('alert')).toHaveTextContent(message);
     expect(input).toHaveValue(value);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock.scanCalls()).toHaveLength(0);
   });
 
   it.each([
@@ -119,7 +119,7 @@ describe('US-04 / US-05: progress, completion and report', () => {
     expect(screen.getByTestId('count-succeeded')).toHaveTextContent('1');
     const map = screen.getByRole('list', { name: 'Pages found on the website' });
     expect(within(map).getAllByRole('listitem')).toHaveLength(3);
-    expect(within(map).getByText('/about.html: Checking now')).toBeInTheDocument();
+    expect(within(map).getByText('/about.html: checking now')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('max', '3');
   });
 
@@ -139,27 +139,71 @@ describe('US-04 / US-05: progress, completion and report', () => {
 
     const heading = screen.getByRole('heading', { level: 1, name: 'Accessibility report for bakery.example' });
     expect(heading).toHaveFocus();
+    expect(window.location.hash).toBe('#/report/11111111-1111-4111-8111-111111111111');
+
+    // The answer first: the issue total, split by severity, and what to fix first.
+    expect(screen.getByTestId('total-issues')).toHaveTextContent('4');
+    expect(screen.getByTestId('sev-critical')).toHaveTextContent('3');
+    expect(screen.getByTestId('sev-serious')).toHaveTextContent('1');
+    expect(screen.getByTestId('sev-moderate')).toHaveTextContent('0');
+    expect(screen.getByText(/Fix first:/).closest('p')).toHaveTextContent(
+      'Fix first: Images must have alternative text. Critical, 3 elements on 1 page.',
+    );
+
+    // The page counts add up: found = scanned + could not be scanned + skipped.
     expect(screen.getByTestId('total-discovered')).toHaveTextContent('3');
     expect(screen.getByTestId('total-succeeded')).toHaveTextContent('2');
     expect(screen.getByTestId('total-failed')).toHaveTextContent('1');
-    expect(screen.getByTestId('total-issues')).toHaveTextContent('4');
-    expect(screen.getByText('Started')).toBeInTheDocument();
-    expect(screen.getByText('Finished')).toBeInTheDocument();
+    expect(screen.getByTestId('total-skipped')).toHaveTextContent('0');
+    expect(screen.getByText(/^Started .*, finished .*/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: `${SITE}/` })).toBeInTheDocument();
 
-    const scanned = screen.getByRole('region', { name: 'Scanned pages (2)' });
-    expect(within(scanned).getByText('/')).toBeInTheDocument();
-    expect(within(scanned).getByText('3 issues')).toBeInTheDocument();
-    await user.click(within(scanned).getByText('/'));
+    const pages = screen.getByRole('region', { name: 'Page by page' });
+    expect(within(pages).getByText('/')).toBeInTheDocument();
+    await user.click(within(pages).getByText('/'));
     expect(screen.getByRole('heading', { name: 'Images must have alternative text' })).toBeVisible();
+    expect(pages).toHaveTextContent('/missing.html');
+    expect(pages).toHaveTextContent('Could not be scanned. The page responded with HTTP 404.');
 
-    const failed = screen.getByRole('region', { name: 'Pages that could not be scanned (1)' });
-    expect(failed).toHaveTextContent('/missing.html');
-    expect(failed).toHaveTextContent('The page responded with HTTP 404.');
+    // Selecting a tile in the page map opens that page's row.
+    const map = screen.getByRole('list', { name: 'Pages on the website' });
+    await user.click(within(map).getByRole('button', { name: /\/about\.html: checked, 1 issue/ }));
+    expect(screen.getByRole('heading', { name: 'Form elements must have labels' })).toBeVisible();
 
     expect(screen.queryByText(/bronze|silver|gold/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Scan another website' }));
-    expect(screen.getByLabelText('Website URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('Website URL')).toHaveValue('');
+    expect(window.location.hash).toBe('');
+  });
+
+  it('scans the same website again from the report', async () => {
+    const done = scanState('completed_with_errors', { pages: completedReport.pages, report: completedReport });
+    const fetchMock = mockApi({ post: [202, scanState('queued')], polls: [done] });
+    const { user, input, button } = setup();
+    await user.type(input, SITE);
+    await user.click(button);
+    await user.click(await screen.findByRole('button', { name: 'View report' }));
+    await user.click(screen.getByRole('button', { name: 'Scan again' }));
+    expect(fetchMock.scanCalls().filter(([, o]) => o?.method === 'POST')).toHaveLength(2);
+    expect(screen.getByLabelText('Website URL')).toHaveValue(`${SITE}/`);
+  });
+
+  it('reopens a report from its link after a reload', async () => {
+    const done = scanState('completed', { pages: completedReport.pages, report: completedReport });
+    mockApi({ post: [202, {}], polls: [done] });
+    window.location.hash = '#/report/11111111-1111-4111-8111-111111111111';
+    render(<App pollIntervalMs={5} />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Accessibility report for bakery.example' })).toBeInTheDocument();
+    window.location.hash = '';
+  });
+
+  it('shows what a scan will do, with the server limits', async () => {
+    mockApi({ post: [202, {}] });
+    setup();
+    const about = screen.getByRole('region', { name: 'What a scan does' });
+    expect(await within(about).findByText('Up to 50 on the same website')).toBeInTheDocument();
+    expect(about).toHaveTextContent('15 s per page, 3 pages at a time');
   });
 
   it('shows a warning when a safety limit stopped the scan', async () => {

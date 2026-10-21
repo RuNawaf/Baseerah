@@ -7,7 +7,7 @@ export const ERROR_CODES = {
   },
   INVALID_URL: {
     status: 400,
-    message: 'This is not a valid web address. Check the spelling, for example https://example.com.',
+    message: 'This is not a valid web address. Check the spelling, for example https://www.ksu.edu.sa.',
   },
   UNSUPPORTED_PROTOCOL: {
     status: 400,
