@@ -21,7 +21,18 @@ const browserManager = createBrowserManager({ executablePath: config.chromiumExe
 const scanService = createScanService({ config, logger, browserManager });
 const app = createApp({ config, logger, scanService });
 
-const server = app.listen(config.port, () => {
+// Express 5 passes listen errors (such as a busy port) to this callback instead of throwing.
+const server = app.listen(config.port, (err) => {
+  if (err) {
+    if (err.code === 'EADDRINUSE') {
+      logger.fatal(
+        `Port ${config.port} is already in use. Another Baseerah server is probably still running: stop it, or set PORT to a different value.`,
+      );
+    } else {
+      logger.fatal({ err }, 'Server failed to start');
+    }
+    process.exit(1);
+  }
   logger.info({ port: config.port, limits: config.scan }, 'Baseerah API listening');
 });
 
