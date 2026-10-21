@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCompletionAlert } from './completionAlert.js';
 import { CompletionNotice } from './components/CompletionNotice.jsx';
 import { FailureNotice } from './components/FailureNotice.jsx';
 import { Masthead } from './components/Masthead.jsx';
@@ -6,6 +7,7 @@ import { Report } from './components/Report.jsx';
 import { ScanForm } from './components/ScanForm.jsx';
 import { ScanProgress } from './components/ScanProgress.jsx';
 import { useScan } from './useScan.js';
+import { validateUrl } from './validateUrl.js';
 
 export default function App({ pollIntervalMs = 1000 }) {
   const { phase, inputError, scan, failure, announcement, submit, reset, clearInputError } = useScan({ pollIntervalMs });
@@ -16,6 +18,14 @@ export default function App({ pollIntervalMs = 1000 }) {
   const noticeRef = useRef(null);
 
   const busy = phase === 'starting' || phase === 'scanning';
+  const openReport = useCallback(() => setView('report'), []);
+  const completionAlert = useCompletionAlert({ phase, scan, failure, onOpenReport: openReport });
+
+  function handleSubmit() {
+    // Ask while we still have the click: browsers ignore permission prompts that are not tied to a user action.
+    if (!validateUrl(url).code) completionAlert.ask();
+    submit(url);
+  }
 
   useEffect(() => {
     if (inputError) inputRef.current?.focus();
@@ -66,7 +76,7 @@ export default function App({ pollIntervalMs = 1000 }) {
                   setUrl(value);
                   if (inputError) clearInputError();
                 }}
-                onSubmit={() => submit(url)}
+                onSubmit={handleSubmit}
                 error={inputError}
                 busy={busy}
                 phase={phase}
@@ -74,12 +84,12 @@ export default function App({ pollIntervalMs = 1000 }) {
               />
             </section>
 
-            {scan && phase !== 'idle' && phase !== 'failed' && <ScanProgress scan={scan} phase={phase} />}
+            {scan && phase !== 'idle' && phase !== 'failed' && <ScanProgress scan={scan} phase={phase} notifications={completionAlert.permission} />}
 
             {phase === 'done' && (
-              <CompletionNotice ref={noticeRef} scan={scan} onViewReport={() => setView('report')} />
+              <CompletionNotice ref={noticeRef} scan={scan} onViewReport={openReport} />
             )}
-            {phase === 'failed' && <FailureNotice ref={noticeRef} error={failure} onRetry={() => submit(url)} />}
+            {phase === 'failed' && <FailureNotice ref={noticeRef} error={failure} onRetry={handleSubmit} />}
           </>
         )}
       </main>

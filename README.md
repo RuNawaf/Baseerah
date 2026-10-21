@@ -59,6 +59,13 @@ Then scan `http://127.0.0.1:4400/`.
 
 If Chromium is installed somewhere other than Playwright's default, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome`.
 
+## Completion alerts
+
+When a valid scan starts, the browser asks once for permission to show notifications. If the developer switches
+to another tab, Baseerah sends a system notification when the scan finishes or fails, and clicking it returns to
+the tab and opens the report. The tab title always shows live progress (`Scanning 4/10 – Baseerah`) and then the
+result (`✓ Scan complete` / `✕ Scan failed`), so the result is visible even when notifications are blocked.
+
 ## Technology
 
 | Area | Tools |
@@ -77,7 +84,9 @@ client/                     React + Vite web app
     useScan.js              scan lifecycle: validate → start → poll → done/failed
     api.js                  fetch wrapper with safe error handling
     validateUrl.js          client-side URL check (mirrors the server)
-    components/             ScanForm, ScanProgress, PageMap, CompletionNotice, FailureNotice, Report
+    completionAlert.js      browser notification + tab title when a scan ends in a background tab
+    assets/                 Baseerah logo (header); favicons in client/public are cut from the same logo
+    components/             Masthead, ScanForm, ScanProgress, PageMap, CompletionNotice, FailureNotice, Report
   test/                     component and validation tests (Vitest + Testing Library)
 server/
   src/
@@ -205,6 +214,7 @@ non-HTML files, `mailto:`/`tel:`/`javascript:` links, a form, and known accessib
 | US-03 specific messages, URL kept, no scan, ARIA live announcement | `client/test/App.test.jsx` (US-02 / US-03), `e2e/tests/scan-flow.spec.js` |
 | US-04 same-origin crawl, exclusions, normalization, visited set, axe on every page, failures continue, limits, progress, no form submission | `server/test/crawler/crawler.unit.test.js`, `server/test/crawler/crawler.integration.test.js`, `server/test/api/scans.api.test.js` |
 | US-05 loading state, progress, completion notice, View report, report contents, no scoring | `client/test/App.test.jsx` (US-04 / US-05), `e2e/tests/scan-flow.spec.js` |
+| US-05 completion alert in another tab (system notification, tab title) | `client/test/completionAlert.test.jsx` |
 | US-06 failure reasons, error types, failed pages recorded, no report on full failure, no leaks | `server/test/unit/errors.test.js`, `server/test/crawler/crawler.integration.test.js`, `server/test/api/scans.api.test.js`, `client/test/App.test.jsx` (US-06) |
 | NFR-06 Baseerah's own UI has no critical/serious axe issues | `e2e/tests/scan-flow.spec.js` (scan page, error state, report; desktop and mobile) |
 

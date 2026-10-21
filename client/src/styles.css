@@ -1,9 +1,10 @@
 /* Baseerah — tokens
-   Navy and lens teal come from the Baseerah logo. All text colours meet WCAG AA on paper and white. */
+   Navy and cyan are sampled from the Baseerah logo (#012866, #01C6D8). The logo cyan is too light for text,
+   so --teal is the same hue darkened until it meets WCAG AA. */
 :root {
-  --navy: #102a43;
-  --teal: #0a6e7f;
-  --teal-bright: #3fb8cc; /* decorative only, never for text */
+  --navy: #012866;
+  --teal: #006d78;
+  --teal-bright: #01c6d8; /* logo cyan: decorative only, never for text */
   --paper: #f5f8fa;
   --white: #ffffff;
   --mist: #dce6ec;
@@ -140,39 +141,14 @@ pre,
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--navy);
-  text-decoration: none;
+  display: inline-block;
+  line-height: 0;
 }
 
-.mark path {
-  stroke: var(--teal-bright);
-}
-
-.mark circle {
-  fill: var(--navy);
-}
-
-.mark .pupil {
-  fill: var(--white);
-}
-
-.brand-name {
-  font-weight: 800;
-  font-size: var(--step-1);
-  letter-spacing: -0.01em;
-}
-
-.brand-name-ar {
-  font-size: var(--step-1);
-  font-weight: 700;
-  color: var(--teal);
-  /* physical sides: the element is dir="rtl", so logical properties would flip */
-  padding-left: 0.6rem;
-  border-left: 1px solid var(--rule);
-  font-family: 'Noto Kufi Arabic', 'Geeza Pro', 'Segoe UI', system-ui, sans-serif;
+.brand img {
+  display: block;
+  width: auto;
+  height: 2.6rem;
 }
 
 /* ---------- Page ---------- */
@@ -335,6 +311,13 @@ pre,
 .progress h2 {
   font-size: var(--step-2);
   font-weight: 800;
+}
+
+.progress-hint {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: var(--step--1);
+  max-width: var(--measure);
 }
 
 .progress-line {
