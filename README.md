@@ -35,6 +35,12 @@ npm run fixtures                         # http://127.0.0.1:4400/
 ALLOW_PRIVATE_NETWORK_TARGETS=true npm run dev
 ```
 
+On Windows PowerShell, set the variable first:
+
+```powershell
+$env:ALLOW_PRIVATE_NETWORK_TARGETS = "true"; npm run dev
+```
+
 Then scan `http://127.0.0.1:4400/`.
 
 ## Scripts

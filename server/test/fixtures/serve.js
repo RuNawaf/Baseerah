@@ -84,7 +84,12 @@ export async function startFixtureServers({ sitePort = 0, externalPort = 0 } = {
   };
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Compare resolved, case-insensitive paths: on Windows the drive letter case can differ.
+const isMain =
+  process.argv[1] &&
+  path.resolve(process.argv[1]).toLowerCase() === path.resolve(fileURLToPath(import.meta.url)).toLowerCase();
+
+if (isMain) {
   const servers = await startFixtureServers({
     sitePort: Number(process.env.FIXTURE_PORT ?? 4400),
     externalPort: Number(process.env.FIXTURE_EXTERNAL_PORT ?? 4401),
