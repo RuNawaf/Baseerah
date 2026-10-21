@@ -1,0 +1,102 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ApiError, getScan, startScan } from './api.js';
+import { plural, displayHost } from './format.js';
+import { validateUrl } from './validateUrl.js';
+
+const FINISHED = new Set(['completed', 'completed_with_errors', 'failed']);
+const MAX_POLL_RETRIES = 3;
+
+/**
+ * Drives one scan from submission to result.
+ * phase: idle → starting → scanning → done | failed
+ */
+export function useScan({ pollIntervalMs = 1000 } = {}) {
+  const [phase, setPhase] = useState('idle');
+  const [inputError, setInputError] = useState(null);
+  const [scan, setScan] = useState(null);
+  const [failure, setFailure] = useState(null);
+  const [announcement, setAnnouncement] = useState('');
+  const retries = useRef(0);
+
+  const submit = useCallback(async (rawUrl) => {
+    const checked = validateUrl(rawUrl);
+    if (checked.code) {
+      setInputError(checked);
+      return false;
+    }
+
+    setInputError(null);
+    setFailure(null);
+    setScan(null);
+    setPhase('starting');
+    setAnnouncement('Checking that the website can be reached…');
+
+    try {
+      const created = await startScan(rawUrl.trim());
+      retries.current = 0;
+      setScan(created);
+      setPhase('scanning');
+      setAnnouncement(`Scan started for ${displayHost(created.url)}.`);
+      return true;
+    } catch (err) {
+      const error = err instanceof ApiError ? err : new ApiError('INTERNAL_ERROR', 'Something went wrong. Try again.');
+      // Validation and availability problems belong next to the URL field so it can be corrected.
+      setInputError({ code: error.code, message: error.message });
+      setPhase('idle');
+      setAnnouncement('');
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'scanning' || !scan?.scanId) return undefined;
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const latest = await getScan(scan.scanId);
+        if (cancelled) return;
+        retries.current = 0;
+        setScan(latest);
+        if (!FINISHED.has(latest.status)) return;
+
+        if (latest.status === 'failed') {
+          setFailure(latest.error);
+          setPhase('failed');
+          setAnnouncement(`Scan failed. ${latest.error?.message ?? ''}`.trim());
+        } else {
+          const { totals } = latest.report;
+          setPhase('done');
+          setAnnouncement(
+            `Scan complete. ${plural(totals.succeededPages, 'page')} checked, ${plural(totals.issues, 'accessibility issue')} found.`,
+          );
+        }
+      } catch (err) {
+        if (cancelled) return;
+        retries.current += 1;
+        if (err.code === 'SCAN_NOT_FOUND' || retries.current > MAX_POLL_RETRIES) {
+          setFailure({ code: err.code, message: err.message });
+          setPhase('failed');
+          setAnnouncement(`Scan failed. ${err.message}`);
+        } else {
+          setScan((current) => ({ ...current })); // schedule another attempt
+        }
+      }
+    }, pollIntervalMs);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phase, scan, pollIntervalMs]);
+
+  const reset = useCallback(() => {
+    setPhase('idle');
+    setScan(null);
+    setFailure(null);
+    setInputError(null);
+    setAnnouncement('');
+  }, []);
+
+  return { phase, inputError, scan, failure, announcement, submit, reset, clearInputError: () => setInputError(null) };
+}
