@@ -277,19 +277,28 @@ pre {
 }
 
 .lang-switch {
-  width: 40px;
-  height: 40px;
+  display: grid;
+  place-items: center;
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: 0 0 4px; /* the letter sits low on its baseline; lift it to the optical centre */
+  border: 0;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--sheet);
+  background: #ebe9e4;
   color: var(--ink);
-  font: 700 1.0625rem/1 'Readex Pro', var(--font);
+  font: 700 1.125rem/1 'Readex Pro', var(--font);
   cursor: pointer;
   transition: background-color 120ms ease;
 }
 
 .lang-switch:hover {
-  background: var(--raised);
+  background: #dfdcd5;
+}
+
+/* in Arabic the button shows "En", which needs no lift */
+:root[lang='ar'] .lang-switch {
+  padding: 0;
+  font-family: var(--font);
 }
 
 /* ---------- pills ---------- */
@@ -846,7 +855,7 @@ pre {
 
 .facts-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
   margin-top: 16px;
   padding: 40px;
@@ -1954,7 +1963,7 @@ progress::-moz-progress-bar {
   }
 
   .facts-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .stages {
@@ -2048,8 +2057,8 @@ progress::-moz-progress-bar {
   }
 
   .facts-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 16px;
+    grid-template-columns: 1fr;
+    gap: 20px;
     padding: 28px 20px;
   }
 

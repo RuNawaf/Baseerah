@@ -6,7 +6,6 @@ export function ScanAbout({ limits }) {
   const { t, impact } = useI18n();
   const concurrency = limits ? limits.concurrency : 3;
   const facts = [
-    { figure: limits ? limits.maxPages : 50, unit: t('factPages'), text: t('factPagesText') },
     { figure: limits ? limits.maxDepth : 5, unit: t('factDepth'), text: t('factDepthText') },
     { figure: limits ? Math.round(limits.pageTimeoutMs / 1000) : 15, unit: t('factTime'), text: t('factTimeText', { n: concurrency }) },
     { figure: 0, unit: t('factForms'), text: t('factFormsText') },

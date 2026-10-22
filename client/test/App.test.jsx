@@ -202,8 +202,7 @@ describe('US-04 / US-05: progress, completion and report', () => {
     mockApi({ post: [202, {}] });
     setup();
     const about = screen.getByRole('region', { name: 'What a scan does' });
-    await waitFor(() => expect(within(about).getByText('50').closest('dt')).toHaveTextContent('50 pages'));
-    expect(within(about).getByText('15').closest('dt')).toHaveTextContent('15 s per page');
+    await waitFor(() => expect(within(about).getByText('15').closest('dt')).toHaveTextContent('15 s per page'));
     expect(about).toHaveTextContent('with 3 pages checked at a time');
     expect(within(about).getByText('5').closest('dt')).toHaveTextContent('5 links deep');
   });
