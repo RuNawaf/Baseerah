@@ -1522,6 +1522,141 @@ progress::-moz-progress-bar {
   color: var(--navy);
 }
 
+/* the provisional rating, first after the finding */
+.rating {
+  --medal: #8a8f96;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px 28px;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: var(--sheet);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.rating-gold {
+  --medal: #d4a72c;
+}
+
+.rating-silver {
+  --medal: #9ea6af;
+}
+
+.rating-bronze {
+  --medal: #b4733b;
+}
+
+.medal {
+  width: 64px;
+  height: 64px;
+}
+
+.medal-ribbon {
+  fill: var(--navy);
+}
+
+.medal-disc {
+  fill: var(--medal);
+}
+
+.medal-ring {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.6);
+  stroke-width: 1.5;
+}
+
+.medal-cross {
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.rating-none .medal-ribbon {
+  fill: #b9b6af;
+}
+
+.rating h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.rating-label {
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.rating-level {
+  font-size: var(--fs-title);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.rating-text p {
+  margin-top: 6px;
+  max-width: 70ch;
+}
+
+.rating-note {
+  color: var(--faint);
+  font-size: var(--fs-small);
+}
+
+.rating-ladder {
+  display: flex;
+  gap: 6px;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--faint);
+  font-size: var(--fs-meta);
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+}
+
+.step.is-reached {
+  color: var(--ink);
+  font-weight: 700;
+  border-color: var(--ink);
+}
+
+.step-bronze.is-reached .step-dot {
+  background: #b4733b;
+  border-color: #b4733b;
+}
+
+.step-silver.is-reached .step-dot {
+  background: #9ea6af;
+  border-color: #9ea6af;
+}
+
+.step-gold.is-reached .step-dot {
+  background: #d4a72c;
+  border-color: #d4a72c;
+}
+
+:root[lang='ar'] .rating-level {
+  letter-spacing: 0;
+}
+
 .report .notice-warning {
   margin: -8px 0 20px;
 }
@@ -1978,6 +2113,14 @@ progress::-moz-progress-bar {
   .overview > .panel:nth-child(3) {
     grid-column: 1 / -1;
   }
+
+  .rating {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rating-ladder {
+    grid-column: 2;
+  }
 }
 
 /* ---------- phone ---------- */
@@ -2072,6 +2215,21 @@ progress::-moz-progress-bar {
 
   .overview > .panel:nth-child(n) {
     grid-column: 1 / -1;
+  }
+
+  .rating {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 18px 16px;
+  }
+
+  .rating-ladder {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+
+  .medal {
+    width: 52px;
+    height: 52px;
   }
 
   .actions,

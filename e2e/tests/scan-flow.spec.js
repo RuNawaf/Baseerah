@@ -39,6 +39,8 @@ test('scans the whole fixture website and opens the report @mobile', async ({ pa
   await expect(page.getByTestId('total-failed')).toHaveText('1');
   await expect(page.getByTestId('total-skipped')).toHaveText('1');
   await expect(page.getByText(/^Fix first:/)).toBeVisible();
+  // The fixture site has an image without alt text (critical), so the provisional rating withholds Bronze.
+  await expect(page.getByTestId('rating-level')).toHaveText('Not rated');
 
   const rows = page.getByRole('region', { name: 'Page by page' });
   await expect(rows).toContainText('/missing.html');
