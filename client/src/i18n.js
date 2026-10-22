@@ -88,7 +88,7 @@ const STRINGS = {
 
     aboutTitle: 'What a scan does',
     aboutLede:
-      'Baseerah opens each page in Chrome, runs the axe-core rules for WCAG 2 A and AA plus best practices, and records every element that fails.',
+      'Baseerah checks each page against the W3C Accessibility Guidelines (WCAG) 3.0 and rates the website Bronze, Silver or Gold.',
     stage1Title: 'It follows the site’s links',
     stage1Text: 'Every internal page it can reach joins the queue once. Other websites, files and email links are left alone.',
     stage2Title: 'It checks every element',
@@ -101,7 +101,7 @@ const STRINGS = {
     fragBlind: 'Blind visitors hear nothing for this image.',
     fragFix: 'Fix:',
     fragFixText: 'describe the image in an {alt} attribute, or mark it as decorative with {empty}.',
-    fragWcag: 'WCAG 1.1.1, found on 1 page.',
+    fragWcag: 'WCAG 3.0: Text alternatives, found on 1 page.',
     factPages: 'pages',
     factPagesText: 'on the same website, found through its own links',
     factDepth: 'links deep',
@@ -261,7 +261,7 @@ const STRINGS = {
 
     aboutTitle: 'ماذا يفعل الفحص',
     aboutLede:
-      'تفتح بصيرة كل صفحة في متصفح Chrome، وتشغّل قواعد axe-core لمعايير WCAG 2 بمستويي A وAA مع أفضل الممارسات، وتسجّل كل عنصر لا يجتازها.',
+      'تفحص بصيرة كل صفحة وفق إرشادات W3C للإتاحة (WCAG) 3.0، وتصنّف الموقع برونزيًا أو فضيًا أو ذهبيًا.',
     stage1Title: 'يتتبّع روابط الموقع',
     stage1Text: 'كل صفحة داخلية يصل إليها تدخل الطابور مرة واحدة. أما المواقع الأخرى والملفات وروابط البريد فيتجاهلها.',
     stage2Title: 'يفحص كل عنصر',
@@ -274,7 +274,7 @@ const STRINGS = {
     fragBlind: 'لن يسمع الزائر الكفيف شيئًا عن هذه الصورة.',
     fragFix: 'الإصلاح:',
     fragFixText: 'صِف الصورة في الخاصية {alt}، أو اجعلها زخرفية بـ {empty}.',
-    fragWcag: 'WCAG 1.1.1، وُجدت في صفحة واحدة.',
+    fragWcag: 'WCAG 3.0: البدائل النصية، وُجدت في صفحة واحدة.',
     factPages: 'صفحة',
     factPagesText: 'في الموقع نفسه، يصل إليها عبر روابطه',
     factDepth: 'روابط عمقًا',
