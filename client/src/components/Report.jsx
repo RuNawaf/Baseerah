@@ -3,7 +3,6 @@ import { displayHost, displayPath, formatDuration, formatTime } from '../format.
 import { useI18n } from '../i18n.js';
 import { IMPACTS, summarizeReport } from '../reportData.js';
 import { PageMap, PageMapLegend, PageTile, tileKind } from './PageMap.jsx';
-import { RatingCard } from './RatingCard.jsx';
 
 const MAX_RULES = 5;
 
@@ -184,8 +183,6 @@ export function Report({ scan, headingRef, onNewScan, onScanAgain }) {
           <>{t('noIssuesFinding', { pages: count(counts.scanned, 'scannedPage') })}</>
         )}
       </p>
-
-      <RatingCard rating={summary.rating} failedPages={counts.failed} />
 
       {report.limitsReached.map((limit) => (
         <p key={limit.type} className="notice-warning">

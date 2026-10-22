@@ -139,7 +139,7 @@ describe('US-04 / US-05: progress, completion and report', () => {
     await user.click(button);
 
     const notice = await screen.findByRole('region', { name: 'Scan complete' });
-    expect(notice).toHaveTextContent('2 pages checked and 4 accessibility issues found. 1 page could not be scanned. Rating: Not rated.');
+    expect(notice).toHaveTextContent('2 pages checked and 4 accessibility issues found. 1 page could not be scanned.');
     expect(notice).toHaveFocus();
     expect(screen.getByRole('status')).toHaveTextContent('Scan complete. 2 pages checked, 4 accessibility issues found.');
 
@@ -178,11 +178,7 @@ describe('US-04 / US-05: progress, completion and report', () => {
     await user.click(within(map).getByRole('button', { name: /\/about\.html: checked, 1 issue/ }));
     expect(screen.getByRole('heading', { name: 'Form elements must have labels' })).toBeVisible();
 
-    // Provisional rating: the demo data has critical issues, so it is not rated yet.
-    const rating = screen.getByRole('region', { name: /Rating/ });
-    expect(screen.getByTestId('rating-level')).toHaveTextContent('Not rated');
-    expect(rating).toHaveTextContent('Fix the 3 issues rated critical to reach Bronze.');
-    expect(rating).toHaveTextContent('not an official W3C conformance claim');
+    expect(screen.queryByText(/bronze|silver|gold/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Scan another website' }));
     expect(screen.getByLabelText('Website URL')).toHaveValue('');

@@ -70,21 +70,6 @@ link (`#/report/<scanId>`), which works for as long as the server keeps the scan
 To check the design: `node .claude/skills/design-taste-frontend/scripts/lint.mjs --app client/src` and
 `node .claude/skills/design-taste-frontend/scripts/inspect.mjs --app <url>` (needs Chrome; set `CHROME_PATH` if needed).
 
-## Provisional rating
-
-The report opens with a Bronze, Silver or Gold rating, named after the WCAG 3.0 draft's levels and computed from
-the scan's own results (`ratingFor` in `client/src/reportData.js`):
-
-| Level | Rule |
-| --- | --- |
-| Gold | No issues on the scanned pages |
-| Silver | No critical or serious issues |
-| Bronze | No critical issues |
-| Not rated | At least one critical issue |
-
-The page says plainly that this is Baseerah's own rule and not an official W3C conformance claim, and tells the
-developer what to fix to reach the next level. Pages that could not be scanned are not part of the rating.
-
 ## Languages
 
 The interface is available in English and Arabic. The round **ع** button in the top bar switches to Arabic (right to
@@ -268,6 +253,5 @@ CI (`.github/workflows/ci.yml`) runs all suites and the production build on ever
 - Playwright does not expose the individual hops of a browser redirect. If a page redirects off the site, it is
   rejected after loading instead of before. For production, run the scanner with egress rules that block internal
   networks as a second layer.
-- axe-core checks WCAG 2.x rules. The Bronze/Silver/Gold rating is a provisional team rule (below), not WCAG 3.0
-  conformance scoring, which the W3C draft has not finalised. Replace it when the team settles §7.4 of the Sprint 0 report.
+- axe-core checks WCAG 2.x rules. Mapping them to WCAG 3.0 and the Bronze/Silver/Gold score is planned for a later sprint.
 - Automated checks find only part of all accessibility barriers; manual testing is still needed.

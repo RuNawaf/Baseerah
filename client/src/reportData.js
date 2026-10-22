@@ -4,25 +4,6 @@ export const IMPACT_LABEL = { critical: 'Critical', serious: 'Serious', moderate
 
 const IMPACT_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
 
-export const RATING_LEVELS = ['bronze', 'silver', 'gold'];
-
-/**
- * Baseerah's provisional rating, named after the WCAG 3.0 draft's Bronze, Silver and Gold levels.
- * It is the team's own rule over the scan results, not an official W3C conformance claim:
- *   Gold   – no issues on the scanned pages
- *   Silver – no critical or serious issues
- *   Bronze – no critical issues
- *   none   – at least one critical issue
- * `next` says what stands between this level and the one above it.
- */
-export function ratingFor(byImpact) {
-  const { critical, serious, moderate, minor } = byImpact;
-  if (critical + serious + moderate + minor === 0) return { level: 'gold', next: null };
-  if (critical === 0 && serious === 0) return { level: 'silver', next: { level: 'gold', issues: moderate + minor } };
-  if (critical === 0) return { level: 'bronze', next: { level: 'silver', issues: serious, impact: 'serious' } };
-  return { level: 'none', next: { level: 'bronze', issues: critical, impact: 'critical' } };
-}
-
 function emptyCounts() {
   return { critical: 0, serious: 0, moderate: 0, minor: 0 };
 }
@@ -95,6 +76,5 @@ export function summarizeReport(report) {
     },
     // The one finding: the most severe rule, and how far it reaches.
     topRule: ruleList[0] ?? null,
-    rating: ratingFor(byImpact),
   };
 }

@@ -1,11 +1,9 @@
 import { forwardRef } from 'react';
 import { useI18n } from '../i18n.js';
-import { summarizeReport } from '../reportData.js';
 
 export const CompletionNotice = forwardRef(function CompletionNotice({ scan, onViewReport }, ref) {
   const { t, count, limit } = useI18n();
   const { totals, limitsReached } = scan.report;
-  const { rating } = summarizeReport(scan.report);
 
   return (
     <section className="notice notice-done" aria-labelledby="done-title" ref={ref} tabIndex={-1}>
@@ -13,8 +11,7 @@ export const CompletionNotice = forwardRef(function CompletionNotice({ scan, onV
         <h2 id="done-title">{t('doneTitle')}</h2>
         <p>
           {t('doneText', { pages: count(totals.succeededPages, 'page'), issues: count(totals.issues, 'accessibilityIssue') })}
-          {totals.failedPages > 0 && ` ${t('doneFailed', { pages: count(totals.failedPages, 'page') })}`}{' '}
-          <strong>{t('doneRating', { level: t(`rating_${rating.level}`) })}</strong>
+          {totals.failedPages > 0 && ` ${t('doneFailed', { pages: count(totals.failedPages, 'page') })}`}
         </p>
         {limitsReached.length > 0 && (
           <p className="notice-warning">
