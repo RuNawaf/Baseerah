@@ -28,6 +28,11 @@ async function request(path, options) {
 
   if (!response.ok) {
     const error = body?.error;
+    // Baseerah's API never answers a known route with 404 NOT_FOUND; that comes from a host with no API behind it,
+    // such as the front end deployed on its own without VITE_API_URL.
+    if (response.status === 404 && (!error || error.code === 'NOT_FOUND')) {
+      throw new ApiError('API_UNAVAILABLE', 'Baseerah’s scanning server is not connected to this site yet, so scans cannot run here.', 404);
+    }
     throw new ApiError(
       error?.code ?? 'INTERNAL_ERROR',
       error?.message ?? 'Something went wrong on the server. Try again later.',

@@ -80,6 +80,14 @@ describe('US-02 / US-03: invalid URL errors', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('explains when the front end is deployed without its API', async () => {
+    mockApi({ post: [404, { error: { code: 'NOT_FOUND', message: 'The page could not be found' } }] });
+    const { user, input, button } = setup();
+    await user.type(input, 'https://www.ksu.edu.sa');
+    await user.click(button);
+    expect(await screen.findByRole('alert')).toHaveTextContent('scanning server is not connected to this site yet');
+  });
+
   it('explains when the Baseerah server cannot be reached', async () => {
     mockApi({ post: () => Promise.reject(new TypeError('Failed to fetch')) });
     const { user, input, button } = setup();
